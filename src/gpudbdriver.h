@@ -1,18 +1,22 @@
 //
-// Created by Benjamin Trapani on 3/30/16.
+// GPUDB Driver Header (API and Helpers)
 //
 
 #ifndef SRC_GPUDBDRIVER_H
 #define SRC_GPUDBDRIVER_H
 
-#include "DBElement.h"
-#include "QueryResult.h"
+#include "DBStructs.h"
 
-void create(const DBElement * object);
-//caller is responsible for freeing memory.
-QueryResult * query(const DBElement * object);
-void update(const DBElement * object);
-void deleteEntry(const DBElement * object);
-void sort(const DBElement * sortFilter, const DBElement * searchFilter);
+// Caller must free memory
 
-#endif //SRC_GPUDBDRIVER_H
+void create(const GPUDB_Element *object);
+
+GPUDB_QueryResult * query(const GPUDB_Element *searchFilter);
+
+void update(const GPUDB_Element *searchFilter, const GPUDB_Element *updates);
+
+void deleteBy(const GPUDB_Element *searchFilter);
+
+void sort(const GPUDB_Element *sortFilter, const GPUDB_Element *searchFilter);
+
+#endif // SRC_GPUDBDRIVER_H
