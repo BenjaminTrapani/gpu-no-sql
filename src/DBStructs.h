@@ -46,7 +46,7 @@ typedef struct Schema {
 // Element Related Structures
 
 typedef struct Element {
-    GPUDB_Schema schema;
+    int schema;
     GPUDB_EntryNode *pairs;
 } GPUDB_Element;
 
