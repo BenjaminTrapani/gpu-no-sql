@@ -25,7 +25,6 @@ def runMakeCheck():
     print('stdout:\n' + stdout)
     print('stderr:' + stderr)
     print('exit_code:' + str(exit_code))
-    print('Closing connection to rpc.wks.ccs.neu.edu')
 
 try:
     cwd = os.path.dirname(os.path.realpath(__file__))
@@ -40,9 +39,9 @@ try:
     else:
         submission.sendline('hf11Ben3ftb7whq')
         submission.expect(pexpect.EOF)
+        print('copy to remote complete, running make check')
         runMakeCheck()
 
-    print('copy to remote complete')
 except Exception as e:
     print e;
 
