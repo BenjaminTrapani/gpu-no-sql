@@ -1,20 +1,10 @@
 //
-// Created by Benjamin Trapani on 3/30/16.
+// GPU DB Implementation
 //
 
 #include "gpudbdriver.h"
 #include <cuda.h>
 #include "stdio.h"
-
-void create(const DBElement * object){
-
-}
-
-//caller is responsible for freeing memory.
-QueryResult * query(const DBElement * object);
-void update(const DBElement * object);
-void deleteEntry(const DBElement * object);
-void sort(const DBElement * sortFilter, const DBElement * searchFilter);
 
 int main(int argc, char * argv[]){
     int nDevices;
@@ -34,4 +24,24 @@ int main(int argc, char * argv[]){
                2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
 
     }
+}
+
+void create(const GPUDB_Element *object) {
+    return; // TODO
+}
+
+GPUDB_QueryResult * query(const GPUDB_Element *searchFilter) {
+    return ((GPUDB_QueryResult *) malloc(sizeof(GPUDB_QueryResult)));
+}
+
+void update(const GPUDB_Element *searchFilter, const GPUDB_Element *updates) {
+    return; // TODO
+}
+
+void delete(const GPUDB_Element *searchFilter) {
+    return; // TODO
+}
+
+void sort(const GPUDB_Element *sortFilter, const GPUDB_Element *searchFilter) {
+    return; // TODO
 }
