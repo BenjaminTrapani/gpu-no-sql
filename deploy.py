@@ -2,7 +2,7 @@ import pexpect
 import paramiko
 import os
 
-def runMakeCheck():
+def runSSHWithCommand(command):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
@@ -12,7 +12,7 @@ def runMakeCheck():
         print e;
 
     channel = ssh.get_transport().open_session()
-    channel.exec_command('source ~/.profile && cd ~/gpudb/gpu-no-sql/src && make check')
+    channel.exec_command(command = command)
     channel.shutdown_write()
 
     stdout = channel.makefile().read()
@@ -26,7 +26,15 @@ def runMakeCheck():
     print('stderr:' + stderr)
     print('exit_code:' + str(exit_code))
 
+def runMakeCheck():
+    runSSHWithCommand('source ~/.profile && cd ~/gpudb/gpu-no-sql/src && make check')
+
+def cleanOldGPUDB():
+    print('removing old files in ~/gpudb/gpu-no-sql/')
+    runSSHWithCommand('rm -rf ~/gpudb/gpu-no-sql')
+
 try:
+    cleanOldGPUDB()
     cwd = os.path.dirname(os.path.realpath(__file__))
     spawnCommand = 'scp -r ' + cwd + ' gpu@rpc.wks.ccs.neu.edu:~/gpudb/'
     print spawnCommand
