@@ -15,7 +15,7 @@ GPUDB_QueryResult * query(const GPUDB_Element *searchFilter);
 
 void update(const GPUDB_Element *searchFilter, const GPUDB_Element *updates);
 
-void delete(const GPUDB_Element *searchFilter);
+void deleteBy(const GPUDB_Element *searchFilter);
 
 void sort(const GPUDB_Element *sortFilter, const GPUDB_Element *searchFilter);
 

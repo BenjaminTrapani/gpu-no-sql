@@ -15,10 +15,8 @@ int main(int argc, char * argv[]){
         cudaGetDeviceProperties(&prop, i);
         printf("Device Number: %d\n", i);
         printf("  Device name: %s\n", prop.name);
-        printf("  Memory Clock Rate (KHz): %d\n",
-               prop.memoryClockRate);
-        printf("  Memory Bus Width (bits): %d\n",
-               prop.memoryBusWidth);
+        printf("  Memory Clock Rate (KHz): %d\n", prop.memoryClockRate);
+        printf("  Memory Bus Width (bits): %d\n", prop.memoryBusWidth);
         printf("  GPU Memory (GB): %f\n", ((float)prop.totalGlobalMem)/((float)(gb)));
         printf("  Peak Memory Bandwidth (GB/s): %f\n",
                2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
@@ -38,7 +36,7 @@ void update(const GPUDB_Element *searchFilter, const GPUDB_Element *updates) {
     return; // TODO
 }
 
-void delete(const GPUDB_Element *searchFilter) {
+void deleteBy(const GPUDB_Element *searchFilter) {
     return; // TODO
 }
 

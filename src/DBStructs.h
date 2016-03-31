@@ -9,19 +9,19 @@
 
 // Data Related Structures
 
-enum DATA_TYPE {
+enum GPUDB_Type {
     GPUDB_INT,
     GPUDB_FLT,
     GPUDB_CHAR,
     GPUDB_STR
-} GPUDB_Type
+};
 
-union Data {
+union GPUDB_Data {
     int num;
     float f;
     char c;
     char str[MAX_STRING_SIZE];
-} GPUDB_Data;
+};
 
 // Entry Related Structures
 
@@ -40,13 +40,13 @@ typedef struct EntryNode {
 
 typedef struct Schema {
     int id;
-    KeyNode *keys;
+    EntryNode *keys;
 } GPUDB_Schema;
 
 // Element Related Structures
 
 typedef struct Element {
-    GPUDB_Schema schema = -1;
+    GPUDB_Schema schema;
     GPUDB_EntryNode *pairs;
 } GPUDB_Element;
 
