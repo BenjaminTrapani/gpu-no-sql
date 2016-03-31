@@ -18,7 +18,7 @@ void sort(const DBElement * sortFilter, const DBElement * searchFilter);
 
 int main(int argc, char * argv[]){
     int nDevices;
-
+    const unsigned int gb = 1024 * 1024 * 1024;
     cudaGetDeviceCount(&nDevices);
     for (int i = 0; i < nDevices; i++) {
         cudaDeviceProp prop;
@@ -29,9 +29,9 @@ int main(int argc, char * argv[]){
                prop.memoryClockRate);
         printf("  Memory Bus Width (bits): %d\n",
                prop.memoryBusWidth);
+        printf("  GPU Memory (GB): %f\n", ((float)prop.totalGlobalMem)/((float)(gb)));
         printf("  Peak Memory Bandwidth (GB/s): %f\n",
                2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
-        printf("  GPU Memory (GB): %f\n", prop.totalGlobalMem);
 
     }
 }
