@@ -8,5 +8,5 @@ gpudb:
 clean:
 	rm -rf gpudb
 
-check: clean gpudb
+check: gpudb
 	./gpudb

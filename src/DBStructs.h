@@ -6,6 +6,7 @@
 #define SRC_DBSTRUCTS_H
 
 #include "presets.h"
+#include <vector>
 
 // Data Related Structures
 
@@ -20,28 +21,35 @@ union GPUDB_Data {
     int num;
     float f;
     char c;
-    char str[MAX_STRING_SIZE];
+    long long bigVal;
 };
 
 // Entry Related Structures
 
 typedef struct Entry {
-    char key[MAX_KEY_LENGTH];
+    unsigned long long int key;
     GPUDB_Type valType;
     GPUDB_Data data;
+    unsigned int rootIndex;
+    unsigned int match;
 } GPUDB_Entry;
+
+typedef struct QueryResult{
+    const Entry * entries;
+    const unsigned int numEntries;
+    QueryResult(const Entry * ientries, const unsigned int inumEntries):entries(ientries),
+                                                                        numEntries(inumEntries){}
+}GPUDB_QueryResult;
+
+typedef struct Schema {
+    char key[MAX_KEY_LENGTH];
+    std::vector<GPUDB_Entry*> entries;
+}GPUDB_Schema;
 
 typedef struct EntryNode {
     GPUDB_Entry entry;
     struct EntryNode *next;
 } GPUDB_EntryNode;
-
-// Schema Related Structures
-
-typedef struct Schema {
-    int id;
-    EntryNode *keys;
-} GPUDB_Schema;
 
 // Element Related Structures
 
@@ -55,10 +63,5 @@ typedef struct Element {
 typedef struct ElementNode {
 
 } GPUDB_ElementNode;
-
-typedef struct QueryResult {
-    ElementNode result;
-    struct QueryResult *next;
-} GPUDB_QueryResult;
 
 #endif // SRC_DBSTRUCTS_H

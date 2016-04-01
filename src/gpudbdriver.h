@@ -8,15 +8,30 @@
 #include "DBStructs.h"
 
 // Caller must free memory
+namespace GPUDB {
+    class GPUDBDriver {
+        public:
+            typedef unsigned int GPUSizeType;
 
-void create(const GPUDB_Element *object);
+            GPUDBDriver();
+            ~GPUDBDriver();
+            void create(const GPUDB_Entry *object);
+            QueryResult query(const GPUDB_Entry *searchFilter, const GPUSizeType limit);
+            void update(const GPUDB_Entry *searchFilter, const GPUDB_Entry *updates);
+            void deleteBy(const GPUDB_Entry *searchFilter);
+            void sort(const GPUDB_Entry *sortFilter, const GPUDB_Entry *searchFilter);
 
-GPUDB_QueryResult * query(const GPUDB_Element *searchFilter);
+            inline size_t getTableSize()const{
+                return numEntries;
+            }
 
-void update(const GPUDB_Element *searchFilter, const GPUDB_Element *updates);
-
-void deleteBy(const GPUDB_Element *searchFilter);
-
-void sort(const GPUDB_Element *sortFilter, const GPUDB_Element *searchFilter);
+        private:
+            size_t numEntries;
+            GPUSizeType nextFreeIndex;
+            Entry * deviceMappedEntries;
+            Entry * deviceMappedFilter;
+            char * queryResults;
+    };
+}
 
 #endif // SRC_GPUDBDRIVER_H
