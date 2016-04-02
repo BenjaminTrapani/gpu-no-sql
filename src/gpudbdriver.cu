@@ -12,8 +12,6 @@
 #include "thrust/sequence.h"
 #include "thrust/transform.h"
 
-#include <cub/cub.cuh>
-
 using namespace GPUDB;
 typedef GPUDBDriver::CoreTupleType CoreTupleType;
 
@@ -37,11 +35,12 @@ GPUDBDriver::GPUDBDriver(){
     cudaDeviceProp propOfInterest;
     cudaGetDeviceProperties(&propOfInterest, 0);
     size_t memBytes = propOfInterest.totalGlobalMem;
-    size_t allocSize = memBytes*0.12f;
+    size_t allocSize = memBytes*0.05f;
     numEntries = allocSize/sizeof(CoreTupleType);
     printf("Num entries = %i\n", numEntries);
+
     deviceEntries.reserve(numEntries);
-    deviceIntermediateBuffer = new thrust::device_vector<CoreTupleType>(8);
+    deviceIntermediateBuffer = new thrust::device_vector<CoreTupleType>(numEntries);
 }
 GPUDBDriver::~GPUDBDriver(){
     delete deviceIntermediateBuffer;
@@ -58,7 +57,7 @@ struct IsPartialTupleMatch /*: thrust::unary_function<GPUDBDriver::CoreTupleType
     CUB_RUNTIME_FUNCTION __forceinline__
     IsPartialTupleMatch(const CoreTupleType & filter):_filter(filter){}
 
-    CUB_RUNTIME_FUNCTION __forceinline__ __
+    CUB_RUNTIME_FUNCTION __forceinline__ __device__ __host__
     bool operator()(const CoreTupleType & val)const{
         //return true;
         return val == _filter;
@@ -71,18 +70,8 @@ private:
 thrust::host_vector<CoreTupleType> GPUDBDriver::query(const CoreTupleType &searchFilter, const GPUSizeType limit){
     clock_t t1, t2;
     t1 = clock();
-    void * tempStorage = NULL;
-    size_t tempStorageSize = 0;
-    size_t selectedCount = 0;
-    thrust::device_ptr<CoreTupleType> entriesBegin = deviceEntries.data();
-    thrust::device_ptr<CoreTupleType> intermediateBegin = deviceIntermediateBuffer->data();
-    CoreTupleType * rawEntriesBegin = entriesBegin.get();
-    CoreTupleType * rawIntermediateBegin = intermediateBegin.get();
-    cub::DeviceSelect::If(tempStorage, tempStorageSize, rawEntriesBegin,
-                          rawIntermediateBegin, &selectedCount, deviceEntries.size(),
-                            IsPartialTupleMatch(searchFilter));
-    /*thrust::copy_if(deviceEntries.begin(), deviceEntries.end(), deviceIntermediateBuffer->begin(),
-                    IsPartialTupleMatch(searchFilter));*/
+    thrust::copy_if(deviceEntries.begin(), deviceEntries.end(), deviceIntermediateBuffer->begin(),
+                    IsPartialTupleMatch(searchFilter));
     t2 = clock();
 
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
@@ -161,7 +150,7 @@ int main(int argc, char * argv[]){
     printf("Query took %f milliseconds\n", diff);
 
     t1 = clock();
-    thrust::host_vector<CoreTupleType> hostResult = driver.queryOnHost(filterTuple, 1);
+    //thrust::host_vector<CoreTupleType> hostResult = driver.queryOnHost(filterTuple, 1);
     t2 = clock();
     float hostDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("Host query took %f ms\n", hostDiff);

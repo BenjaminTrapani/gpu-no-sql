@@ -27,9 +27,11 @@ union GPUDB_Data {
 // Entry Related Structures
 
 typedef struct Entry {
+    unsigned long long int id;
     unsigned int key;
     GPUDB_Type valType;
     GPUDB_Data data;
+    unsigned long long int parentID;
 
     Entry():key(0), valType(GPUDB_INT){
         data.bigVal = 0;
