@@ -24,3 +24,6 @@ std::vector<int> keyValueFilterCPU(char *key, GPUDB_Type type, GPUDB_Data data);
 // Searches the given ids for all matches to both key and a document
 // Done on the CPU
 std::vector<int> keyIDFilterCPU(char *key, std::vector<int> ids);
+
+// Get all needed entries for the given ids
+std::vector<GPUDB_QueryResult> getEntries(std::vector<int> ids);
