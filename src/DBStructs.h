@@ -27,19 +27,20 @@ union GPUDB_Data {
     char c;
     char s[16];
     int d; // Will be -1
+    long long int bigVal;
 };
 
 // Entry Related Structures
 
 typedef struct Entry {
     unsigned long long int id;
-    char key[16];
+    long long int key;
     GPUDB_Type valType;
     GPUDB_Data data;
     unsigned long long int parentID;
 
     // Zero's memory
-    Entry():key(0), valType(GPUDB_INT){
+    Entry():id(0), key(0), valType(GPUDB_INT), parentID(0){
         data.bigVal = 0;
     }
 
