@@ -1,8 +1,10 @@
 # IDEA Folders
-.idea/
+.idea
 deploy-devel/.idea
 src/.idea
 
 # Dependencies
 deps/cub
 deps/trust
+
+.DS_Store
