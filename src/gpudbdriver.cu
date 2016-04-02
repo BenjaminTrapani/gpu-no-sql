@@ -125,6 +125,7 @@ int main(int argc, char * argv[]){
     for(unsigned int i = 0; i < driver.getTableSize()-1; i++){
         Entry anEntry;
         anEntry.data.bigVal=0;
+        anEntry.valType = GPUDB_BGV;
         driver.create(anEntry);
     }
     Entry lastEntry;
