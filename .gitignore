@@ -1,6 +1,6 @@
 # IDEA Folders
-.idea/*
+.idea
 
 # Dependencies
-deps/cub/*
-deps/trust/*
+deps/cub
+deps/trust
