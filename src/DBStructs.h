@@ -54,7 +54,10 @@ typedef struct Entry {
 } GPUDB_Entry;
 
 typedef struct QueryResult {
-    // TODO
+    char key[16];
+    GPUDB_Type valType;
+    GPUDB_Data data;
+    std::vector<struct QueryResult> children;
 } GPUDB_QueryResult;
 
 // Element Related Structures
