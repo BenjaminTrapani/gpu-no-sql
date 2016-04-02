@@ -16,6 +16,7 @@ enum GPUDB_Type {
     GPUDB_FLT,
     GPUDB_CHAR,
     GPUDB_STR,
+    GPUDB_BGV,
     GPUDB_DOC,
     GPUDB_ANY
 };
@@ -25,9 +26,9 @@ union GPUDB_Data {
     int n;
     float f;
     char c;
-    char s[16];
-    int d; // Will be -1
+    long long int s;
     long long int bigVal;
+    int d; // Will be -1
 };
 
 // Entry Related Structures
