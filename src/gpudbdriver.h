@@ -14,15 +14,19 @@
 namespace GPUDB {
     class GPUDBDriver {
         public:
-            typedef unsigned int GPUSizeType;
+            typedef unsigned long long int GPUSizeType;
 
-            typedef thrust::tuple<unsigned long long int, Entry, Entry, Entry, Entry> CoreTupleType;
+            typedef Entry CoreTupleType;
 
             GPUDBDriver();
             ~GPUDBDriver();
             void create(const CoreTupleType &object);
-            thrust::host_vector<CoreTupleType> query(const CoreTupleType &searchFilter, const GPUSizeType limit);
-            thrust::host_vector<CoreTupleType> queryOnHost(const CoreTupleType &searchFilter, const GPUSizeType limit);
+
+            thrust::device_vector<CoreTupleType>* query(const CoreTupleType &searchFilter, const GPUSizeType limit);
+            //thrust::host_vector<CoreTupleType>* queryOnHost(const CoreTupleType &searchFilter, const GPUSizeType limit);
+
+            thrust::host_vector<GPUSizeType> * getParentIndicesForFilter(const CoreTupleType & searchFilter);
+
             void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
             void deleteBy(const CoreTupleType &searchFilter);
             void sort(const CoreTupleType &sortFilter, const CoreTupleType &searchFilter);
@@ -35,6 +39,8 @@ namespace GPUDB {
             size_t numEntries;
             thrust::device_vector<CoreTupleType> deviceEntries;
             thrust::device_vector<CoreTupleType> * deviceIntermediateBuffer;
+            thrust::device_vector<GPUSizeType> * deviceParentIndices;
+            thrust::host_vector<GPUSizeType> * hostBuffer;
     };
 }
 
