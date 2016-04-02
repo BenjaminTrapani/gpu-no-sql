@@ -6,6 +6,9 @@
 #define SRC_GPUDBDRIVER_H
 
 #include "DBStructs.h"
+#include "thrust/tuple.h"
+#include "thrust/device_vector.h"
+#include "thrust/host_vector.h"
 
 // Caller must free memory
 namespace GPUDB {
@@ -13,13 +16,15 @@ namespace GPUDB {
         public:
             typedef unsigned int GPUSizeType;
 
+            typedef thrust::tuple<unsigned long long int, Entry, Entry, Entry, Entry> CoreTupleType;
+
             GPUDBDriver();
             ~GPUDBDriver();
-            void create(const GPUDB_Entry *object);
-            QueryResult query(const GPUDB_Entry *searchFilter, const GPUSizeType limit);
-            void update(const GPUDB_Entry *searchFilter, const GPUDB_Entry *updates);
-            void deleteBy(const GPUDB_Entry *searchFilter);
-            void sort(const GPUDB_Entry *sortFilter, const GPUDB_Entry *searchFilter);
+            void create(const CoreTupleType &object);
+            thrust::host_vector<CoreTupleType> query(const CoreTupleType &searchFilter, const GPUSizeType limit);
+            void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
+            void deleteBy(const CoreTupleType &searchFilter);
+            void sort(const CoreTupleType &sortFilter, const CoreTupleType &searchFilter);
 
             inline size_t getTableSize()const{
                 return numEntries;
@@ -27,10 +32,7 @@ namespace GPUDB {
 
         private:
             size_t numEntries;
-            GPUSizeType nextFreeIndex;
-            Entry * deviceMappedEntries;
-            Entry * deviceMappedFilter;
-            char * queryResults;
+            thrust::device_vector<CoreTupleType> deviceEntries;
     };
 }
 

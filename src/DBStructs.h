@@ -27,11 +27,22 @@ union GPUDB_Data {
 // Entry Related Structures
 
 typedef struct Entry {
-    unsigned long long int key;
+    unsigned int key;
     GPUDB_Type valType;
     GPUDB_Data data;
-    unsigned int rootIndex;
-    unsigned int match;
+
+    Entry():key(0), valType(GPUDB_INT){
+        data.bigVal = 0;
+    }
+
+    bool operator<(const Entry & val)const{
+        return true; //TODO smarter comparison
+    }
+
+    bool operator==(const Entry & val)const{
+        return key == val.key && data.bigVal == val.data.bigVal;
+    }
+
 } GPUDB_Entry;
 
 typedef struct QueryResult{
