@@ -74,8 +74,8 @@ private:
 
 struct FetchParentID : thrust::unary_function<GPUDBDriver::CoreTupleType,GPUDBDriver::GPUSizeType>{
     __device__ __host__
-    inline GPUDBDriver::GPUSizeType operator()(const CoreTupleType & val)const{
-        return val.parentID;
+    inline GPUDBDriver::GPUSizeType operator()(const CoreTupleType & ival, GPUDBDriver::GPUSizeType & oval)const{
+        oval=ival.parentID;
     }
 };
 
@@ -91,19 +91,6 @@ thrust::device_vector<CoreTupleType>* GPUDBDriver::query(const CoreTupleType &se
     return deviceIntermediateBuffer;
 }
 
-/*thrust::host_vector<CoreTupleType> * GPUDBDriver::queryOnHost(const CoreTupleType &searchFilter, const GPUSizeType limit){
-    thrust::host_vector<CoreTupleType> hostEntries = deviceEntries;
-    clock_t t1, t2;
-    t1 = clock();
-    thrust::copy_if(thrust::host, hostEntries.begin(), hostEntries.end(), hostBuffer->begin(),
-                    IsPartialTupleMatch(searchFilter));
-    t2 = clock();
-
-    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("host copy_if latency = %fms\n", diff);
-
-    return hostBuffer;
-}*/
 
 void GPUDBDriver::update(const CoreTupleType &searchFilter, const CoreTupleType &updates){
 
@@ -141,6 +128,7 @@ int main(int argc, char * argv[]){
         driver.create(anEntry);
     }
     Entry lastEntry;
+    lastEntry.valType = GPUDB_BGV;
     lastEntry.data.bigVal = 1;
     lastEntry.key = 10;
     lastEntry.parentID = 3;
