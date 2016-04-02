@@ -60,11 +60,11 @@ void GPUDBDriver::create(const CoreTupleType &object){
 struct IsPartialTupleMatch : thrust::unary_function<GPUDBDriver::CoreTupleType,bool>{
     typedef GPUDBDriver::CoreTupleType CoreTupleType;
 
-    CUB_RUNTIME_FUNCTION __forceinline__
-    IsPartialTupleMatch(const CoreTupleType & filter):_filter(filter){}
 
-    CUB_RUNTIME_FUNCTION __forceinline__ __device__ __host__
-    bool operator()(const CoreTupleType & val)const{
+    inline IsPartialTupleMatch(const CoreTupleType & filter):_filter(filter){}
+
+    __device__ __host__
+    inline bool operator()(const CoreTupleType & val)const{
         return val == _filter;
     }
 
@@ -72,9 +72,9 @@ private:
     CoreTupleType _filter;
 };
 
-struct FetchParentID{
-    CUB_RUNTIME_FUNCTION __forceinline__ __device__ __host__
-    GPUDBDriver::GPUSizeType operator()(const CoreTupleType & val, const GPUDBDriver::GPUSizeType & newVal)const{
+struct FetchParentID : thrust::unary_function<GPUDBDriver::CoreTupleType,GPUDBDriver::GPUSizeType>{
+    __device__ __host__
+    inline GPUDBDriver::GPUSizeType operator()(const CoreTupleType & val)const{
         return val.parentID;
     }
 };
