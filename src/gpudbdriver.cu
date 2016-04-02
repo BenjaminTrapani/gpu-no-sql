@@ -76,7 +76,7 @@ thrust::host_vector<CoreTupleType> GPUDBDriver::query(const CoreTupleType &searc
 
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("device copy_if latency = %fms\n", diff);
-
+    //test test
     thrust::host_vector<CoreTupleType> resultVector(selectedCount);
     thrust::copy(deviceIntermediateBuffer->begin(), deviceIntermediateBuffer->begin()+selectedCount,
                     resultVector.begin());
