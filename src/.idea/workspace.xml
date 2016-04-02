@@ -54,8 +54,8 @@
       <file leaf-file-name="gpudbdriver.cu" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/gpudbdriver.cu">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="2.0786517">
-              <caret line="116" column="57" selection-start-line="116" selection-start-column="57" selection-end-line="116" selection-end-column="57" />
+            <state vertical-scroll-proportion="0.42696628">
+              <caret line="84" column="17" selection-start-line="84" selection-start-column="17" selection-end-line="84" selection-end-column="17" />
               <folding />
             </state>
           </provider>
@@ -65,7 +65,7 @@
         <entry file="file://$PROJECT_DIR$/gpudbdriver.h">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="18" column="99" selection-start-line="18" selection-start-column="86" selection-end-line="18" selection-end-column="99" />
+              <caret line="36" column="75" selection-start-line="36" selection-start-column="51" selection-end-line="36" selection-end-column="75" />
               <folding />
             </state>
           </provider>
@@ -102,9 +102,9 @@
         <option value="$PROJECT_DIR$/gpudbdriver.c" />
         <option value="$PROJECT_DIR$/CMakeLists.txt" />
         <option value="$PROJECT_DIR$/presets.h" />
-        <option value="$PROJECT_DIR$/gpudbdriver.h" />
         <option value="$PROJECT_DIR$/DBStructs.h" />
         <option value="$PROJECT_DIR$/Makefile" />
+        <option value="$PROJECT_DIR$/gpudbdriver.h" />
         <option value="$PROJECT_DIR$/gpudbdriver.cu" />
       </list>
     </option>
@@ -117,7 +117,7 @@
     <order />
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="39" />
+    <option name="x" value="6" />
     <option name="y" value="23" />
     <option name="width" value="1306" />
     <option name="height" value="815" />
@@ -211,7 +211,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="39" y="23" width="1306" height="815" extended-state="0" />
+    <frame x="6" y="23" width="1306" height="815" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -337,6 +337,14 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Makefile">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-7.7777777">
+          <caret line="14" column="0" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/presets.h">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
@@ -353,26 +361,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Makefile">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-7.7777777">
-          <caret line="14" column="0" selection-start-line="14" selection-start-column="0" selection-end-line="14" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/gpudbdriver.h">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="18" column="99" selection-start-line="18" selection-start-column="86" selection-end-line="18" selection-end-column="99" />
+          <caret line="36" column="75" selection-start-line="36" selection-start-column="51" selection-end-line="36" selection-end-column="75" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/gpudbdriver.cu">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="2.0786517">
-          <caret line="116" column="57" selection-start-line="116" selection-start-column="57" selection-end-line="116" selection-end-column="57" />
+        <state vertical-scroll-proportion="0.42696628">
+          <caret line="84" column="17" selection-start-line="84" selection-start-column="17" selection-end-line="84" selection-end-column="17" />
           <folding />
         </state>
       </provider>

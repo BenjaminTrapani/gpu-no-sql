@@ -35,13 +35,15 @@ GPUDBDriver::GPUDBDriver(){
     cudaDeviceProp propOfInterest;
     cudaGetDeviceProperties(&propOfInterest, 0);
     size_t memBytes = propOfInterest.totalGlobalMem;
-    size_t allocSize = memBytes*0.05f;
+    size_t allocSize = memBytes*0.12f;
     numEntries = allocSize/sizeof(CoreTupleType);
-    numEntries/=1000;
     printf("Num entries = %i\n", numEntries);
     deviceEntries.reserve(numEntries);
+    deviceIntermediateBuffer = new thrust::device_vector<CoreTupleType>(8);
 }
 GPUDBDriver::~GPUDBDriver(){
+    delete deviceIntermediateBuffer;
+    deviceIntermediateBuffer=0;
 }
 
 void GPUDBDriver::create(const CoreTupleType &object){
@@ -55,6 +57,7 @@ struct IsPartialTupleMatch : thrust::unary_function<GPUDBDriver::CoreTupleType,b
 
     __host__ __device__
     bool operator()(const CoreTupleType & val){
+        //return true;
         return val == _filter;
     }
 
@@ -63,13 +66,31 @@ private:
 };
 
 thrust::host_vector<CoreTupleType> GPUDBDriver::query(const CoreTupleType &searchFilter, const GPUSizeType limit){
-    thrust::device_vector<CoreTupleType> intermediate(numEntries);
-
-    thrust::copy_if(deviceEntries.begin(), deviceEntries.end(), intermediate.begin(),
+    clock_t t1, t2;
+    t1 = clock();
+    thrust::copy_if(deviceEntries.begin(), deviceEntries.end(), deviceIntermediateBuffer->begin(),
                     IsPartialTupleMatch(searchFilter));
+    t2 = clock();
 
-    thrust::host_vector<CoreTupleType> resultVector = intermediate;
+    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("device copy_if latency = %fms\n", diff);
+
+    thrust::host_vector<CoreTupleType> resultVector = *deviceIntermediateBuffer;
     return resultVector;
+}
+
+thrust::host_vector<CoreTupleType> GPUDBDriver::queryOnHost(const CoreTupleType &searchFilter, const GPUSizeType limit){
+    thrust::host_vector<CoreTupleType> hostEntries = deviceEntries;
+    clock_t t1, t2;
+    t1 = clock();
+    thrust::copy_if(thrust::host, hostEntries.begin(), hostEntries.end(), deviceIntermediateBuffer->begin(),
+                    IsPartialTupleMatch(searchFilter));
+    t2 = clock();
+
+    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("host copy_if latency = %fms\n", diff);
+
+    return hostEntries;
 }
 
 void GPUDBDriver::update(const CoreTupleType &searchFilter, const CoreTupleType &updates){
@@ -115,11 +136,20 @@ int main(int argc, char * argv[]){
     thrust::host_vector<CoreTupleType> queryResult = driver.query(filterTuple, 1);
     t2 = clock();
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("Query took %f milliseconds\n", diff);
     for(int i = 0; i < queryResult.size(); i++){
-        printf("Iter data val = %i\n", queryResult[i].get<4>().data.num);
+        int val = queryResult[i].get<4>().data.num;
+        if(val) {
+            printf("Iter data val = %i\n", val);
+        }
     }
 
+    printf("Query took %f milliseconds\n", diff);
+
+    t1 = clock();
+    thrust::host_vector<CoreTupleType> hostResult = driver.queryOnHost(filterTuple, 1);
+    t2 = clock();
+    float hostDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("Host query took %f ms\n", hostDiff);
     return 0;
 
 }

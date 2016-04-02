@@ -22,6 +22,7 @@ namespace GPUDB {
             ~GPUDBDriver();
             void create(const CoreTupleType &object);
             thrust::host_vector<CoreTupleType> query(const CoreTupleType &searchFilter, const GPUSizeType limit);
+            thrust::host_vector<CoreTupleType> queryOnHost(const CoreTupleType &searchFilter, const GPUSizeType limit);
             void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
             void deleteBy(const CoreTupleType &searchFilter);
             void sort(const CoreTupleType &sortFilter, const CoreTupleType &searchFilter);
@@ -33,6 +34,7 @@ namespace GPUDB {
         private:
             size_t numEntries;
             thrust::device_vector<CoreTupleType> deviceEntries;
+            thrust::device_vector<CoreTupleType> * deviceIntermediateBuffer;
     };
 }
 
