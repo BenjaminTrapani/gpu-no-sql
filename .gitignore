@@ -1,5 +1,7 @@
 # IDEA Folders
 .idea
+deploy-devel/.idea
+src/.idea
 
 # Dependencies
 deps/cub
