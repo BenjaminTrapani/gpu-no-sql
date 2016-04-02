@@ -12,6 +12,8 @@
 #include "thrust/sequence.h"
 #include "thrust/transform.h"
 
+#include <cub/cub.cuh>
+
 using namespace GPUDB;
 typedef GPUDBDriver::CoreTupleType CoreTupleType;
 
@@ -50,13 +52,14 @@ void GPUDBDriver::create(const CoreTupleType &object){
     deviceEntries.push_back(object);
 }
 
-struct IsPartialTupleMatch : thrust::unary_function<GPUDBDriver::CoreTupleType,bool>{
+struct IsPartialTupleMatch /*: thrust::unary_function<GPUDBDriver::CoreTupleType,bool>*/{
     typedef GPUDBDriver::CoreTupleType CoreTupleType;
 
+    CUB_RUNTIME_FUNCTION __forceinline__
     IsPartialTupleMatch(const CoreTupleType & filter):_filter(filter){}
 
-    __host__ __device__
-    bool operator()(const CoreTupleType & val){
+    CUB_RUNTIME_FUNCTION __forceinline__ __
+    bool operator()(const CoreTupleType & val)const{
         //return true;
         return val == _filter;
     }
@@ -68,14 +71,26 @@ private:
 thrust::host_vector<CoreTupleType> GPUDBDriver::query(const CoreTupleType &searchFilter, const GPUSizeType limit){
     clock_t t1, t2;
     t1 = clock();
-    thrust::copy_if(deviceEntries.begin(), deviceEntries.end(), deviceIntermediateBuffer->begin(),
-                    IsPartialTupleMatch(searchFilter));
+    void * tempStorage = NULL;
+    size_t tempStorageSize = 0;
+    size_t selectedCount = 0;
+    thrust::device_ptr<CoreTupleType> entriesBegin = deviceEntries.data();
+    thrust::device_ptr<CoreTupleType> intermediateBegin = deviceIntermediateBuffer->data();
+    CoreTupleType * rawEntriesBegin = entriesBegin.get();
+    CoreTupleType * rawIntermediateBegin = intermediateBegin.get();
+    cub::DeviceSelect::If(tempStorage, tempStorageSize, rawEntriesBegin,
+                          rawIntermediateBegin, &selectedCount, deviceEntries.size(),
+                            IsPartialTupleMatch(searchFilter));
+    /*thrust::copy_if(deviceEntries.begin(), deviceEntries.end(), deviceIntermediateBuffer->begin(),
+                    IsPartialTupleMatch(searchFilter));*/
     t2 = clock();
 
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("device copy_if latency = %fms\n", diff);
 
-    thrust::host_vector<CoreTupleType> resultVector = *deviceIntermediateBuffer;
+    thrust::host_vector<CoreTupleType> resultVector(selectedCount);
+    thrust::copy(deviceIntermediateBuffer->begin(), deviceIntermediateBuffer->begin()+selectedCount,
+                    resultVector.begin());
     return resultVector;
 }
 

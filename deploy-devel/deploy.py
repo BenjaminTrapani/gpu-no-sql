@@ -38,8 +38,8 @@ try:
     cwd = os.path.dirname(os.path.realpath(__file__))
     spawnCommand = 'scp -r ' + cwd + ' gpu@rpc.wks.ccs.neu.edu:~/gpudb/'
     print spawnCommand
-    submission = pexpect.spawn(command = spawnCommand)
-
+    submission = pexpect.spawn(command = spawnCommand, timeout=300)
+    submission.timeout = 300
     submissionResult = submission.expect(["Password:", pexpect.EOF])
     if submissionResult is not 0:
         print "Connection timeout"

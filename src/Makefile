@@ -2,7 +2,7 @@ NVCC = nvcc
 
 LIBS = cuda
 
-INCLUDE_DIRS=-I../deps/thrust/thrust/ -I.
+INCLUDE_DIRS=-I../deps/thrust/thrust/ -I../deps/cub/ -I.
 
 gpudb:
 	$(NVCC) gpudbdriver.cu --disable-warnings -l $(LIBS) -o $@ $(INCLUDE_DIRS)
