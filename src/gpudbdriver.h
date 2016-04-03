@@ -13,34 +13,36 @@
 // Caller must free memory
 namespace GPUDB {
     class GPUDBDriver {
-        public:
-            typedef unsigned long long int GPUSizeType;
+    public:
+        typedef unsigned long long int GPUSizeType;
 
-            typedef Entry CoreTupleType;
+        typedef Entry CoreTupleType;
 
-            GPUDBDriver();
-            ~GPUDBDriver();
-            void create(const CoreTupleType &object);
+        GPUDBDriver();
+        ~GPUDBDriver();
+        void create(const CoreTupleType &object);
 
-            thrust::device_vector<CoreTupleType>* query(const CoreTupleType &searchFilter, const GPUSizeType limit);
-            //thrust::host_vector<CoreTupleType>* queryOnHost(const CoreTupleType &searchFilter, const GPUSizeType limit);
+        thrust::device_vector<CoreTupleType>* query(const CoreTupleType &searchFilter, const GPUSizeType limit);
+        //thrust::host_vector<CoreTupleType>* queryOnHost(const CoreTupleType &searchFilter, const GPUSizeType limit);
 
-            thrust::host_vector<GPUSizeType> * getParentIndicesForFilter(const CoreTupleType & searchFilter);
+        thrust::host_vector<GPUSizeType> * getParentIndicesForFilter(const CoreTupleType & searchFilter);
+        thrust::host_vector<GPUSizeType> * getParentIndicesForFilterOnHost(const CoreTupleType & searchFilter);
 
-            void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
-            void deleteBy(const CoreTupleType &searchFilter);
-            void sort(const CoreTupleType &sortFilter, const CoreTupleType &searchFilter);
+        void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
+        void deleteBy(const CoreTupleType &searchFilter);
+        void sort(const CoreTupleType &sortFilter, const CoreTupleType &searchFilter);
 
-            inline size_t getTableSize()const{
-                return numEntries;
-            }
+        inline size_t getTableSize()const{
+            return numEntries;
+        }
 
-        private:
-            size_t numEntries;
-            thrust::device_vector<CoreTupleType> deviceEntries;
-            thrust::device_vector<CoreTupleType> * deviceIntermediateBuffer;
-            thrust::device_vector<GPUSizeType> * deviceParentIndices;
-            thrust::host_vector<GPUSizeType> * hostBuffer;
+    private:
+        size_t numEntries;
+        thrust::device_vector<CoreTupleType> deviceEntries;
+        thrust::device_vector<CoreTupleType> * deviceIntermediateBuffer;
+        thrust::device_vector<GPUSizeType> * deviceParentIndices;
+        thrust::host_vector<GPUSizeType> * hostBuffer;
+        thrust::host_vector<CoreTupleType> * hostResultBuffer;
     };
 }
 
