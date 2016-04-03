@@ -122,7 +122,7 @@ int main(int argc, char * argv[]){
     GPUDBDriver driver;
     printf("sizeof entry = %i\n", sizeof(Entry));
 
-    for(unsigned int i = 0; i < driver.getTableSize()-1; i++){
+    for(unsigned int i = 0; i < driver.getTableSize()-2; i++){
         Entry anEntry;
         anEntry.data.bigVal=0;
         anEntry.valType = GPUDB_BGV;
@@ -134,6 +134,13 @@ int main(int argc, char * argv[]){
     lastEntry.key = 10;
     lastEntry.parentID = 3;
     driver.create(lastEntry);
+
+    Entry realLastEntry;
+    realLastEntry.valType = GPUDB_BGV;
+    realLastEntry.data.bigVal = 1;
+    realLastEntry.key = 10;
+    realLastEntry.parentID = 6;
+    driver.create(realLastEntry);
 
     clock_t t1, t2;
     t1 = clock();
