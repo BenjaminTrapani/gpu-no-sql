@@ -1,4 +1,4 @@
-// Driver API Stuff
+// Driver API
 
 // Creates the element at the given id / index and returns an error code
 int create(unsigned long long int id, char *key, GPUDB_Type type, GPUDB_Data data, unsigned long long int parentID);
@@ -13,7 +13,7 @@ int delete(unsigned long long int id);
 // Done on the GPU
 std::vector<int> keyValueFilterGPU(char *key, GPUDB_Type type, GPUDB_Data data);
 
-// Searches the given ids for all matches to both key and a document
+// Searches the given ids for all matches to both key and a document type
 // Done on the GPU
 std::vector<int> keyIDFilterGPU(char *key, std::vector<int> ids);
 
@@ -21,7 +21,7 @@ std::vector<int> keyIDFilterGPU(char *key, std::vector<int> ids);
 // Done on the CPU
 std::vector<int> keyValueFilterCPU(char *key, GPUDB_Type type, GPUDB_Data data);
 
-// Searches the given ids for all matches to both key and a document
+// Searches the given ids for all matches to both key and a document type
 // Done on the CPU
 std::vector<int> keyIDFilterCPU(char *key, std::vector<int> ids);
 
