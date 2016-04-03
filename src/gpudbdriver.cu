@@ -120,6 +120,40 @@ thrust::host_vector<GPUSizeType> * GPUDBDriver::getParentIndicesForFilter(const 
     return hostBuffer;
 }
 
+thrust::device_vector<GPUSizeType> * GPUDBDriver::getParentIndicesForFilterDevice(const CoreTupleType & searchFilter){
+    thrust::device_vector<CoreTupleType>::iterator lastIter = thrust::copy_if(deviceEntries.begin(),
+                                                                              deviceEntries.end(),
+                                                                              deviceIntermediateBuffer->begin(),
+                                                                              IsPartialTupleMatch(searchFilter));
+
+    size_t numFound = thrust::distance(deviceIntermediateBuffer->begin(), lastIter);
+    thrust::transform(deviceIntermediateBuffer->begin(), deviceIntermediateBuffer->begin() + numFound,
+                      deviceParentIndices->begin(), FetchParentID());
+    return deviceParentIndices;
+}
+
+thrust::host_vector<CoreTupleType> * GPUDBDriver::getEntriesForFilterSet(std::vector<CoreTupleType> filters){
+    thrust::device_vector<GPUSizeType> * parentIndices = 0;
+    for(std::vector<CoreTupleType>::iterator iter = filters.begin(); iter != filters.end(); ++iter){
+        if(parentIndices){
+            GPUSizeType val = static_cast<GPUSizeType>((*parentIndices)[0]);
+            iter->id = val;
+        }
+        if(iter+1 == filters.end()){
+            thrust::device_vector<CoreTupleType>::iterator lastIter = thrust::copy_if(deviceEntries.begin(),
+                                                                                      deviceEntries.end(),
+                                                                                      deviceIntermediateBuffer->begin(),
+                                                                                      IsPartialTupleMatch(*iter));
+            size_t numFound = thrust::distance(deviceIntermediateBuffer->begin(), lastIter);
+            hostResultBuffer->resize(numFound);
+            thrust::copy(deviceIntermediateBuffer->begin(), deviceIntermediateBuffer->begin()+numFound,
+                         hostResultBuffer->begin());
+            return hostResultBuffer;
+        }
+        parentIndices = getParentIndicesForFilterDevice(*iter);
+    }
+}
+
 thrust::host_vector<GPUSizeType> * GPUDBDriver::getParentIndicesForFilterOnHost(const CoreTupleType & searchFilter){
     thrust::host_vector<CoreTupleType> hostEntries = deviceEntries;
     thrust::host_vector<CoreTupleType>::iterator lastIter = thrust::copy_if(thrust::host, hostEntries.begin(),
@@ -143,6 +177,8 @@ int main(int argc, char * argv[]){
         Entry anEntry;
         anEntry.data.bigVal=0;
         anEntry.valType = GPUDB_BGV;
+        anEntry.key=i;
+        anEntry.id = i;
         driver.create(anEntry);
     }
     Entry lastEntry;
@@ -177,6 +213,27 @@ int main(int argc, char * argv[]){
     t2 = clock();
     float diff2 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("host query latency = %fms\n", diff2);
+
+    Entry filter1 = realLastEntry;
+    Entry filter2;
+    filter2.data.bigVal=0;
+    filter2.valType = GPUDB_BGV;
+    filter2.key=realLastEntry.parentID;
+
+    std::vector<Entry> filters;
+    filters.push_back(filter1);
+    filters.push_back(filter2);
+
+    t1 = clock();
+    thrust::host_vector<CoreTupleType> * multiFilterResult = driver.getEntriesForFilterSet(filters);
+    t2 = clock();
+    float diff3 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("multi-filter device query latency = %fms\n", diff3);
+
+    printf("expect key=6, value=0\n");
+    for(int i = 0; i < multiFilterResult->size(); i++){
+        printf("Key=%llu Value=%llu \n", (*multiFilterResult)[i].key, (*multiFilterResult)[i].data.bigVal);
+    }
     return 0;
 
 }

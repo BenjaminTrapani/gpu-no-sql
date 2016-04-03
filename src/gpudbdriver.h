@@ -26,7 +26,9 @@ namespace GPUDB {
         //thrust::host_vector<CoreTupleType>* queryOnHost(const CoreTupleType &searchFilter, const GPUSizeType limit);
 
         thrust::host_vector<GPUSizeType> * getParentIndicesForFilter(const CoreTupleType & searchFilter);
+        thrust::device_vector<GPUSizeType> * getParentIndicesForFilterDevice(const CoreTupleType & searchFilter);
         thrust::host_vector<GPUSizeType> * getParentIndicesForFilterOnHost(const CoreTupleType & searchFilter);
+        thrust::host_vector<CoreTupleType> * getEntriesForFilterSet(std::vector<CoreTupleType> filters);
 
         void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
         void deleteBy(const CoreTupleType &searchFilter);
