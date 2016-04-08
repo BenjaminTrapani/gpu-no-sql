@@ -199,7 +199,13 @@ int main(int argc, char * argv[]){
     clock_t t1, t2;
 
     t1 = clock();
-    thrust::host_vector<CoreTupleType> * hostqueryResult = driver.getEntriesForFilterSet(filters);
+    GPUDBDriver::HostVector_t * hostqueryResult = driver.getEntriesForFilterSet(filters);
+    if(hostqueryResult) {
+        for (GPUDBDriver::HostVector_t::iterator iter = hostqueryResult->begin(); iter != hostqueryResult->end();
+                    ++iter){
+            printf("Query result id = %llu\n", (*iter).id);
+        }
+    }
     t2 = clock();
     float diff2 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("device multi-filter query latency = %fms\n", diff2);
