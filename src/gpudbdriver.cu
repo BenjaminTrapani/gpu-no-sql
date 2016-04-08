@@ -45,7 +45,7 @@ GPUDBDriver::GPUDBDriver(){
 }
 GPUDBDriver::~GPUDBDriver(){
     delete deviceIntermediateBuffer1;
-    deviceIntermediateBuffer=0;
+    deviceIntermediateBuffer1=0;
 
     delete deviceIntermediateBuffer2;
     deviceIntermediateBuffer2=0;
@@ -128,13 +128,13 @@ void GPUDBDriver::searchEntries(const CoreTupleType & filter, DeviceVector_t * r
 thrust::host_vector<CoreTupleType> * GPUDBDriver::getEntriesForFilterSet(std::vector<CoreTupleType> filters){
     DeviceVector_t::iterator lastIter = copy_if(deviceEntries.begin(), deviceEntries.begin() + numEntries,
                                                 deviceIntermediateBuffer1->begin(),
-                                                IsPartialTupleMatch(filter));
+                                                IsPartialTupleMatch(filters[0]));
     size_t lastNumFound = thrust::distance(deviceIntermediateBuffer1->begin(), lastIter);
     size_t curNumFound = 0;
 
-    DeviceVector_t * mostRecentResult = 0;
+    DeviceVector_t * mostRecentResult = deviceIntermediateBuffer1;
 
-    for(std::vector<CoreTupleType>::iterator iter = filters.begin(); iter != filters.end(); ++iter){
+    for(std::vector<CoreTupleType>::iterator iter = filters.begin()+1; iter != filters.end(); ++iter){
         size_t iterDistance = std::distance(filters.begin(), iter);
         if(iterDistance % 2 == 0){
             searchEntries(*iter, deviceIntermediateBuffer1, deviceIntermediateBuffer2, lastNumFound, curNumFound);
