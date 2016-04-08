@@ -15,19 +15,16 @@ namespace GPUDB {
     class GPUDBDriver {
     public:
         typedef unsigned long long int GPUSizeType;
-
         typedef Entry CoreTupleType;
+        typedef thrust::device_vector<CoreTupleType> DeviceVector_t;
+        typedef thrust::host_vector<CoreTupleType> HostVector_t;
 
         GPUDBDriver();
         ~GPUDBDriver();
         void create(const CoreTupleType &object);
 
         thrust::device_vector<CoreTupleType>* query(const CoreTupleType &searchFilter, const GPUSizeType limit);
-        //thrust::host_vector<CoreTupleType>* queryOnHost(const CoreTupleType &searchFilter, const GPUSizeType limit);
 
-        thrust::host_vector<GPUSizeType> * getParentIndicesForFilter(const CoreTupleType & searchFilter);
-        thrust::device_vector<GPUSizeType> * getParentIndicesForFilterDevice(const CoreTupleType & searchFilter);
-        thrust::host_vector<GPUSizeType> * getParentIndicesForFilterOnHost(const CoreTupleType & searchFilter);
         thrust::host_vector<CoreTupleType> * getEntriesForFilterSet(std::vector<CoreTupleType> filters);
 
         void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
@@ -39,12 +36,15 @@ namespace GPUDB {
         }
 
     private:
+        void searchEntries(const CoreTupleType & filter, DeviceVector_t * resultsFromThisStage,
+                            DeviceVector_t * resultsFromLastStage,
+                           const size_t numToSearch,
+                           size_t &numFound);
         size_t numEntries;
-        thrust::device_vector<CoreTupleType> deviceEntries;
-        thrust::device_vector<CoreTupleType> * deviceIntermediateBuffer;
-        thrust::device_vector<GPUSizeType> * deviceParentIndices;
-        thrust::host_vector<GPUSizeType> * hostBuffer;
-        thrust::host_vector<CoreTupleType> * hostResultBuffer;
+        DeviceVector_t deviceEntries;
+        DeviceVector_t * deviceIntermediateBuffer1;
+        DeviceVector_t * deviceIntermediateBuffer2;
+        HostVector_t * hostResultBuffer;
     };
 }
 
