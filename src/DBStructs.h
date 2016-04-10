@@ -28,7 +28,7 @@ union GPUDB_Data {
     char c;
     long long int s;
     long long int bigVal;
-    int d; // Will be -1
+    int d;
 };
 
 // Entry Related Structures
@@ -55,12 +55,6 @@ typedef struct Entry {
 
 } GPUDB_Entry;
 
-typedef struct QueryResult {
-    char key[16];
-    GPUDB_Type valType;
-    GPUDB_Data data;
-    std::vector<struct QueryResult> children;
-} GPUDB_QueryResult;
 
 // Element Related Structures
 

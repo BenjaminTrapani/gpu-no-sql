@@ -12,20 +12,26 @@
 
 // Caller must free memory
 namespace GPUDB {
+    typedef Entry CoreTupleType;
+    typedef unsigned long long int GPUSizeType;
+    typedef thrust::device_vector<CoreTupleType> DeviceVector_t;
+    typedef thrust::host_vector<CoreTupleType> HostVector_t;
+
+    struct QueryResult{
+        HostVector_t * hostResultPointer;
+        size_t numItems;
+    };
+
     class GPUDBDriver {
     public:
-        typedef unsigned long long int GPUSizeType;
-        typedef Entry CoreTupleType;
-        typedef thrust::device_vector<CoreTupleType> DeviceVector_t;
-        typedef thrust::host_vector<CoreTupleType> HostVector_t;
-
         GPUDBDriver();
         ~GPUDBDriver();
         void create(const CoreTupleType &object);
 
         thrust::device_vector<CoreTupleType>* query(const CoreTupleType &searchFilter, const GPUSizeType limit);
 
-        thrust::host_vector<CoreTupleType> * getEntriesForFilterSet(std::vector<CoreTupleType> filters);
+        QueryResult getRootsForFilterSet(const std::vector<CoreTupleType>& filters);
+        QueryResult getEntriesForRoots(const HostVector_t& roots, const size_t numRoots);
 
         void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
         void deleteBy(const CoreTupleType &searchFilter);
