@@ -77,7 +77,7 @@ struct IsFullTupleMatch : thrust::unary_function<CoreTupleType, bool>{
     }
 
 private:
-    const CoreTupleType _filter;
+    CoreTupleType _filter;
 };
 
 struct ExtractParentID : thrust::unary_function<CoreTupleType, GPUSizeType>{
@@ -136,6 +136,7 @@ void GPUDBDriver::update(const CoreTupleType &searchFilter, const CoreTupleType 
                          IsFullTupleMatch(searchFilter));
 }
 void GPUDBDriver::deleteBy(const CoreTupleType &searchFilter){
+    deviceEntries.erase(thrust::find_if(deviceEntries.begin(), deviceEntries.end(), IsFullTupleMatch(searchFilter)));
 }
 
 void GPUDBDriver::sort(const CoreTupleType &sortFilter, const CoreTupleType &searchFilter){
