@@ -68,11 +68,37 @@ private:
     const CoreTupleType _filter;
 };
 
+struct IsFullTupleMatch : thrust::unary_function<CoreTupleType, bool>{
+    inline IsFullTupleMatch(const CoreTupleType & filter):_filter(filter){}
+
+    __device__ __host__
+    inline bool operator()(const CoreTupleType & val)const{
+        return val.fullCompare(_filter);
+    }
+
+private:
+    const CoreTupleType _filter;
+};
+
 struct ExtractParentID : thrust::unary_function<CoreTupleType, GPUSizeType>{
     __device__ __host__
     inline GPUSizeType operator() (const CoreTupleType & val)const{
         return val.parentID;
     }
+};
+
+struct ModifyTuple : thrust::unary_function<CoreTupleType, CoreTupleType>{
+    inline ModifyTuple(const CoreTupleType & updates):_updates(updates){}
+
+    __device__ __host__
+    inline CoreTupleType operator() (const CoreTupleType & val)const{
+        CoreTupleType result = val;
+        result.data.bigVal = _updates.data.bigVal;
+        result.valType = _updates.valType;
+        return result;
+    }
+private:
+    const CoreTupleType _updates;
 };
 
 struct FetchTupleWithParentIDs : thrust::unary_function<CoreTupleType,bool>{
@@ -104,11 +130,12 @@ private:
     GPUSizeType _desiredParentID;
 };
 
-void GPUDBDriver::update(const CoreTupleType &searchFilter, const CoreTupleType &updates){
 
+void GPUDBDriver::update(const CoreTupleType &searchFilter, const CoreTupleType &updates){
+    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), ModifyTuple(updates),
+                         IsFullTupleMatch(searchFilter));
 }
 void GPUDBDriver::deleteBy(const CoreTupleType &searchFilter){
-
 }
 
 void GPUDBDriver::sort(const CoreTupleType &sortFilter, const CoreTupleType &searchFilter){

@@ -53,6 +53,11 @@ typedef struct Entry {
         return key == val.key && valType == val.valType && data.bigVal == val.data.bigVal;
     }
 
+    inline bool fullCompare(const Entry & other)const{
+        return other.id == id && other.key == key && other.valType == valType && other.data.bigVal == data.bigVal &&
+                                                                                 other.parentID == parentID;
+    }
+
 } GPUDB_Entry;
 
 
