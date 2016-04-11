@@ -189,7 +189,6 @@ QueryResult GPUDBDriver::getRootsForFilterSet(const std::vector<CoreTupleType> &
     if(lastNumFound!=0) {
         printf("lastNumFound=%i\n", lastNumFound);
         *hostResultBuffer = *mostRecentResult;
-        hostResultBuffer->resize(lastNumFound);
         result.numItems = lastNumFound;
         result.hostResultPointer = hostResultBuffer;
     }else{
