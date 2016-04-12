@@ -26,12 +26,13 @@ namespace GPUDB {
     public:
         GPUDBDriver();
         ~GPUDBDriver();
+
         void create(const CoreTupleType &object);
 
-        thrust::device_vector<CoreTupleType>* query(const CoreTupleType &searchFilter, const GPUSizeType limit);
-
         QueryResult getRootsForFilterSet(const std::vector<CoreTupleType>& filters);
-        QueryResult getEntriesForRoots(const HostVector_t& roots, const size_t numRoots);
+        Doc getEntriesForRoots(const HostVector_t& roots, const size_t numRoots);
+
+        Doc getDocumentForFilterSet(const std::vector<CoreTupleType> & filters);
 
         void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
         void deleteBy(const CoreTupleType &searchFilter);

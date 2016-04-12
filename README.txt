@@ -1,29 +1,19 @@
 // Driver API
 
-// Creates the element at the given id / index and returns an error code
-int create(unsigned long long int id, char *key, GPUDB_Type type, GPUDB_Data data, unsigned long long int parentID);
+GPUDBDriver();
+        ~GPUDBDriver();
 
-// Updates the given id / index to the type/value and returns an error code
-int update(unsigned long long int id, GPUDB_Type type, GPUDB_Data data);
+        void create(const CoreTupleType &object);
 
-// Deletes the data at the given id / index and returns an error code
-int delete(unsigned long long int id);
+        QueryResult getRootsForFilterSet(const std::vector<CoreTupleType>& filters);
+        Doc getEntriesForRoots(const HostVector_t& roots, const size_t numRoots);
 
-// Searches the entire database for all matches to both key and value and returns a list of parent ID's
-// Done on the GPU
-std::vector<int> keyValueFilterGPU(char *key, GPUDB_Type type, GPUDB_Data data);
+        Doc getDocumentForFilterSet(const std::vector<CoreTupleType> & filters);
 
-// Searches the given ids for all matches to both key and a document type
-// Done on the GPU
-std::vector<int> keyIDFilterGPU(char *key, std::vector<int> ids);
+        void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
+        void deleteBy(const CoreTupleType &searchFilter);
+        void sort(const CoreTupleType &sortFilter, const CoreTupleType &searchFilter);
 
-// Searches the entire database for all matches to both key and value and returns a list of parent ID's
-// Done on the CPU
-std::vector<int> keyValueFilterCPU(char *key, GPUDB_Type type, GPUDB_Data data);
-
-// Searches the given ids for all matches to both key and a document type
-// Done on the CPU
-std::vector<int> keyIDFilterCPU(char *key, std::vector<int> ids);
-
-// Get all needed entries for the given ids
-std::vector<GPUDB_QueryResult> getEntries(std::vector<int> ids);
+        inline size_t getTableSize()const{
+            return numEntries;
+        }
