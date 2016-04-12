@@ -56,6 +56,19 @@ void GPUDBDriver::create(const CoreTupleType &object){
     deviceEntries.push_back(object);
 }
 
+void GPUDBDriver::create(const Doc & toCreate){
+    create(toCreate->kvPair);
+    for (std::vector<Entry>::iterator iter = toCreate.children.begin(); iter != toCreate.children.end(); ++iter) {
+        create(*iter);
+    }
+}
+
+void GPUDBDriver::batchCreate(const std::vector<Doc> & docs){
+    for(std::vector<Doc>::const_iterator iter = docs.begin(); iter != docs.end(); ++iter){
+        create(*iter);
+    }
+}
+
 struct IsPartialTupleMatch : thrust::unary_function<CoreTupleType,bool>{
     inline IsPartialTupleMatch(const CoreTupleType & filter):_filter(filter){}
 
@@ -119,15 +132,15 @@ private:
 };
 
 struct FetchDescendentTuple : thrust::unary_function<CoreTupleType, bool>{
-    inline FetchDescendentTuple(const GPUSizeType desiredParentID): _desiredParentID(desiredParentID){}
+    inline FetchDescendentTuple(CoreTupleType * desiredParentID): _desiredParentID(desiredParentID){}
 
     __device__ __host__
     inline bool operator()(const CoreTupleType & ival)const{
-        return ival.parentID == _desiredParentID;
+        return ival.parentID == _desiredParentID->parentID;
     }
 
 private:
-    GPUSizeType _desiredParentID;
+    CoreTupleType * _desiredParentID;
 };
 
 
@@ -137,9 +150,6 @@ void GPUDBDriver::update(const CoreTupleType &searchFilter, const CoreTupleType 
 }
 void GPUDBDriver::deleteBy(const CoreTupleType &searchFilter){
     deviceEntries.erase(thrust::find_if(deviceEntries.begin(), deviceEntries.end(), IsFullTupleMatch(searchFilter)));
-}
-
-void GPUDBDriver::sort(const CoreTupleType &sortFilter, const CoreTupleType &searchFilter){
 }
 
 void GPUDBDriver::searchEntries(const CoreTupleType & filter, DeviceVector_t * resultsFromThisStage,
@@ -188,9 +198,8 @@ QueryResult GPUDBDriver::getRootsForFilterSet(const std::vector<CoreTupleType> &
     QueryResult result;
     if(lastNumFound!=0) {
         printf("lastNumFound=%i\n", lastNumFound);
-        *hostResultBuffer = *mostRecentResult;
         result.numItems = lastNumFound;
-        result.hostResultPointer = hostResultBuffer;
+        result.deviceResultPointer = mostRecentResult;
     }else{
         result.hostResultPointer = 0;
         result.numItems = 0;
@@ -198,24 +207,40 @@ QueryResult GPUDBDriver::getRootsForFilterSet(const std::vector<CoreTupleType> &
     return result;
 }
 
-QueryResult GPUDBDriver::getEntriesForRoots(const HostVector_t& roots, const size_t numRoots){
+void GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult, std::vector<CoreTupleType> & result){
     DeviceVector_t::iterator lastIter;
     size_t numFound = 0;
-    for(HostVector_t::const_iterator iter = roots.begin(); iter != roots.begin() + numRoots; ++iter){
+
+    for(DeviceVector_t::const_iterator iter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset;
+        iter != rootResult.deviceResultPointer->begin() + rootResult.beginOffset + rootResult.numItems; ++iter){
         lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.begin() + numEntries,
-                           deviceIntermediateBuffer1->begin() + numFound, FetchDescendentTuple((*iter).id));
+                                   deviceIntermediateBuffer1->begin() + numFound + rootResult.beginOffset,
+                                   FetchDescendentTuple(thrust::raw_pointer_cast(&(*iter))));
         numFound += thrust::distance(deviceIntermediateBuffer1->begin()+numFound, lastIter);
-    }
 
-    *hostResultBuffer = *deviceIntermediateBuffer1;
-    for(size_t i = numFound; i < numFound + numRoots; i++){
-        (*hostResultBuffer)[i] = roots[i-numFound];
+        for(DeviceVector_t::cont_iterator iter2 = rootResult.deviceResultPointer->begin() + numFound;
+            iter2 != rootResult.deviceResultPointer->begin() + rootResult.numItems; ++iter2){
+            Doc curVal;
+            curVal.kvPair = *iter2;
+            result.push_back(curVal);
+            QueryResult newResult;
+            newResult.beginOffset = numFound + result.beginOffset;
+            newResult.numItems = 1;
+            getEntriesForRoots(newResult, curVal.children);
+        }
     }
+}
 
-    QueryResult result;
-    result.hostResultPointer = hostResultBuffer;
-    result.numItems = numFound + numRoots;
+std::vector<Doc> GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult){
+    std::vector<Doc> result;
+    rootResult.beginOffset = 0;
+    getEntriesForRoots(rootResult, result);
     return result;
+}
+
+Doc GPUDBDriver::getDocumentForFilterSet(const std::vector<CoreTupleType> & filters){
+    QueryResult rootResult = getRootsForFilterSet(filters);
+    return getEntriesForRoots(rootResult);
 }
 
 int main(int argc, char * argv[]){

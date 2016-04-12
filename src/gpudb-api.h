@@ -13,7 +13,7 @@
 #define GPU_NO_SQL_GPUDB_API_H
 
 #include <string>
-#include "DBStructs.h"
+#include "Entry.h"
 
 // Document Identification
 int getRootDoc();

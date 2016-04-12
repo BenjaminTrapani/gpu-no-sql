@@ -5,7 +5,8 @@
 #ifndef SRC_GPUDBDRIVER_H
 #define SRC_GPUDBDRIVER_H
 
-#include "DBStructs.h"
+#include "Entry.h"
+#include "Doc.h"
 #include "thrust/tuple.h"
 #include "thrust/device_vector.h"
 #include "thrust/host_vector.h"
@@ -18,8 +19,11 @@ namespace GPUDB {
     typedef thrust::host_vector<CoreTupleType> HostVector_t;
 
     struct QueryResult{
-        HostVector_t * hostResultPointer;
+        DeviceVector_t * deviceResultPointer;
         size_t numItems;
+        size_t beginOffset;
+
+        QueryResult():deviceResultPointer(0), numItems(0), beginOffset(0){}
     };
 
     class GPUDBDriver {
@@ -27,26 +31,27 @@ namespace GPUDB {
         GPUDBDriver();
         ~GPUDBDriver();
 
-        void create(const CoreTupleType &object);
-
-        QueryResult getRootsForFilterSet(const std::vector<CoreTupleType>& filters);
-        Doc getEntriesForRoots(const HostVector_t& roots, const size_t numRoots);
+        void create(const Doc & toCreate);
+        void batchCreate(const std::vector<Doc> & docs);
 
         Doc getDocumentForFilterSet(const std::vector<CoreTupleType> & filters);
-
         void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
         void deleteBy(const CoreTupleType &searchFilter);
-        void sort(const CoreTupleType &sortFilter, const CoreTupleType &searchFilter);
 
         inline size_t getTableSize()const{
             return numEntries;
         }
 
     private:
+        void create(const CoreTupleType &object);
         void searchEntries(const CoreTupleType & filter, DeviceVector_t * resultsFromThisStage,
                             DeviceVector_t * resultsFromLastStage,
                            const size_t numToSearch,
                            size_t &numFound);
+        QueryResult getRootsForFilterSet(const std::vector<CoreTupleType>& filters);
+        void getEntriesForRoots(const QueryResult & rootResult, std::vector<CoreTupleType> & result);
+        std::vector<Doc> getEntriesForRoots(const QueryResult & rootResults);
+
         size_t numEntries;
         DeviceVector_t deviceEntries;
         DeviceVector_t * deviceIntermediateBuffer1;
