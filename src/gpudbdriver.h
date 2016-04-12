@@ -34,7 +34,7 @@ namespace GPUDB {
         void create(const Doc & toCreate);
         void batchCreate(const std::vector<Doc> & docs);
 
-        Doc getDocumentForFilterSet(const std::vector<CoreTupleType> & filters);
+        std::vector<Doc> getDocumentsForFilterSet(const std::vector<CoreTupleType> & filters);
         void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
         void deleteBy(const CoreTupleType &searchFilter);
 
@@ -49,7 +49,7 @@ namespace GPUDB {
                            const size_t numToSearch,
                            size_t &numFound);
         QueryResult getRootsForFilterSet(const std::vector<CoreTupleType>& filters);
-        void getEntriesForRoots(const QueryResult & rootResult, std::vector<CoreTupleType> & result);
+        void getEntriesForRoots(const QueryResult & rootResult, std::vector<Doc> & result);
         std::vector<Doc> getEntriesForRoots(const QueryResult & rootResults);
 
         size_t numEntries;

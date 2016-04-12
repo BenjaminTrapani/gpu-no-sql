@@ -10,6 +10,9 @@
 namespace GPUDB {
     class Doc {
     public:
+        Doc(){}
+        Doc(const Entry & entry):kvPair(entry){}
+
         Entry kvPair;
         std::vector<Doc> children;
     };
