@@ -1,4 +1,6 @@
 #include "gpudbdriver.h"
+#include "Functors.h"
+
 #include <cuda.h>
 #include "stdio.h"
 #include <time.h>
@@ -69,81 +71,6 @@ void GPUDBDriver::batchCreate(const std::vector<Doc> & docs){
     }
 }
 
-struct IsPartialTupleMatch : thrust::unary_function<CoreTupleType,bool>{
-    inline IsPartialTupleMatch(const CoreTupleType & filter):_filter(filter){}
-
-    __device__ __host__
-    inline bool operator()(const CoreTupleType & val)const{
-        return val == _filter;
-    }
-
-private:
-    const CoreTupleType _filter;
-};
-
-struct IsFullTupleMatch : thrust::unary_function<CoreTupleType, bool>{
-    inline IsFullTupleMatch(const CoreTupleType & filter):_filter(filter){}
-
-    __device__ __host__
-    inline bool operator()(const CoreTupleType & val)const{
-        return val.fullCompare(_filter);
-    }
-
-private:
-    CoreTupleType _filter;
-};
-
-struct ExtractParentID : thrust::unary_function<CoreTupleType, GPUSizeType>{
-    __device__ __host__
-    inline GPUSizeType operator() (const CoreTupleType & val)const{
-        return val.parentID;
-    }
-};
-
-struct ModifyTuple : thrust::unary_function<CoreTupleType, CoreTupleType>{
-    inline ModifyTuple(const CoreTupleType & updates):_updates(updates){}
-
-    __device__ __host__
-    inline CoreTupleType operator() (const CoreTupleType & val)const{
-        CoreTupleType result = val;
-        result.data.bigVal = _updates.data.bigVal;
-        result.valType = _updates.valType;
-        return result;
-    }
-private:
-    const CoreTupleType _updates;
-};
-
-struct FetchTupleWithParentIDs : thrust::unary_function<CoreTupleType,bool>{
-    inline FetchTupleWithParentIDs(CoreTupleType* validIndices,
-                                   const size_t indexToExamine, const CoreTupleType & filter):
-            _validIndices(validIndices), _indexToExamine(indexToExamine), _filter(filter){
-    }
-
-    __device__ __host__
-    inline bool operator()(const CoreTupleType & ival)const{
-        return _validIndices[_indexToExamine].parentID == ival.id && ival == _filter;
-    }
-
-private:
-    CoreTupleType * _validIndices;
-    const size_t _indexToExamine;
-    const CoreTupleType _filter;
-};
-
-struct FetchDescendentTuple : thrust::unary_function<CoreTupleType, bool>{
-    inline FetchDescendentTuple(const CoreTupleType * desiredParentID): _desiredParentID(desiredParentID){}
-
-    __device__ __host__
-    inline bool operator()(const CoreTupleType & ival)const{
-        return ival.parentID == _desiredParentID->id && ival.parentID!=0;
-    }
-
-private:
-    const CoreTupleType * _desiredParentID;
-};
-
-
 void GPUDBDriver::update(const CoreTupleType &searchFilter, const CoreTupleType &updates){
     thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), ModifyTuple(updates),
                          IsFullTupleMatch(searchFilter));
@@ -152,34 +79,37 @@ void GPUDBDriver::deleteBy(const CoreTupleType &searchFilter){
     thrust::remove_if(deviceEntries.begin(), deviceEntries.end(), IsFullTupleMatch(searchFilter));
 }
 
-void GPUDBDriver::searchEntries(const CoreTupleType & filter, DeviceVector_t * resultsFromThisStage,
+void GPUDBDriver::searchEntries(const FilterGroup & filters, DeviceVector_t * resultsFromThisStage,
                    DeviceVector_t * resultsFromLastStage,
                    const size_t numToSearch,
                    size_t &numFound){
 
     DeviceVector_t::iterator lastIter;
     numFound = 0;
-    for(size_t i = 0; i < numToSearch; i++){
-        lastIter = copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
-                                resultsFromThisStage->begin() + numFound, FetchTupleWithParentIDs(
-                                thrust::raw_pointer_cast(resultsFromLastStage->data()),
-                                i,
-                                filter));
-        if(lastIter != resultsFromThisStage->end())
-            numFound += thrust::distance(resultsFromThisStage->begin()+numFound, lastIter);
+    for(FilterGroup::const_iterator filterIter = filters.begin(); filterIter != filters.end();
+            ++filterIter) {
+        for (size_t i = 0; i < numToSearch; i++) {
+            lastIter = copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
+                               resultsFromThisStage->begin() + numFound, FetchTupleWithParentIDs(
+                            thrust::raw_pointer_cast(resultsFromLastStage->data()),
+                            i,
+                            *filterIter));
+            if (lastIter != resultsFromThisStage->end())
+                numFound += thrust::distance(resultsFromThisStage->begin() + numFound, lastIter);
+        }
     }
 }
 
-QueryResult GPUDBDriver::getRootsForFilterSet(const std::vector<CoreTupleType> & filters){
+QueryResult GPUDBDriver::getRootsForFilterSet(const FilterSet & filters){
     DeviceVector_t::iterator lastIter = copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
                                                 deviceIntermediateBuffer1->begin(),
-                                                IsPartialTupleMatch(filters[0]));
+                                                IsPartialTupleMatch(filters[0][0]));
     size_t lastNumFound = thrust::distance(deviceIntermediateBuffer1->begin(), lastIter);
     size_t curNumFound = 0;
 
     DeviceVector_t * mostRecentResult = deviceIntermediateBuffer1;
 
-    for(std::vector<CoreTupleType>::const_iterator iter = filters.begin()+1; iter != filters.end(); ++iter){
+    for(FilterSet::const_iterator iter = filters.begin()+1; iter != filters.end(); ++iter){
         size_t iterDistance = std::distance(filters.begin(), iter);
         if(iterDistance % 2 == 0){
             searchEntries(*iter, deviceIntermediateBuffer1, deviceIntermediateBuffer2, lastNumFound, curNumFound);
@@ -207,7 +137,6 @@ QueryResult GPUDBDriver::getRootsForFilterSet(const std::vector<CoreTupleType> &
 }
 
 void GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult, std::vector<Doc> & result){
-
     DeviceVector_t::iterator lastIter;
     size_t numFound = 0;
     thrust::copy(rootResult.deviceResultPointer->begin() + rootResult.beginOffset,
@@ -247,7 +176,7 @@ std::vector<Doc> GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult)
     return result;
 }
 
-std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const std::vector<CoreTupleType> & filters){
+std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters){
     QueryResult rootResult = getRootsForFilterSet(filters);
 
     if(rootResult.numItems)
@@ -255,8 +184,44 @@ std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const std::vector<CoreTup
 
     return std::vector<Doc>(0);
 }
+void generateNestedDoc(size_t nestings, std::vector<Doc> & result, size_t beginIndex){
+    Entry curVal;
+    curVal.key = beginIndex;
+    curVal.valType = GPUDB_BGV;
+    curVal.data.bigVal = beginIndex;
+    curVal.id = beginIndex;
+    curVal.parentID = beginIndex-1;
+
+    Doc intermediate(curVal);
+    result.push_back(intermediate);
+
+    generateNestedDoc(nestings-1, intermediate.children, beginIndex+1);
+}
+void runDeepNestingTests(){
+    GPUDBDriver driver;
+    Doc root;
+    root.kvPair.key=1;
+    root.kvPair.data.bigVal=1;
+    root.kvPair.valType=GPUDB_BGV;
+
+    for(size_t i = 2; i < driver.getTableSize()/8; i++){
+        generateNestedDoc(4, root.children, i*4);
+    }
+
+    std::vector<CoreTupleType> filterByFirstFourNest;
+    for(int i = 8; i < 12; i++){
+        Entry curFilter;
+        curFilter.key = i;
+        curFilter.valType=GPUDB_BGV;
+        curFilter.data.bigVal = i;
+        curFilter.id=i;
+        curFilter.parentID=i-1;
+    }
+}
 
 int main(int argc, char * argv[]){
+    //runDeepNestingTests();
+
     GPUDBDriver driver;
     printf("sizeof entry = %i\n", sizeof(Entry));
     Doc coreDoc;
@@ -281,6 +246,7 @@ int main(int argc, char * argv[]){
     realLastEntry.data.bigVal = 1;
     realLastEntry.key = 10;
     realLastEntry.parentID = 6;
+
     coreDoc.children[6].children.push_back(realLastEntry);
 
     driver.create(coreDoc);
@@ -291,14 +257,19 @@ int main(int argc, char * argv[]){
     filter2.valType = GPUDB_BGV;
     filter2.key=realLastEntry.parentID;
 
-    std::vector<Entry> filters;
-    filters.push_back(filter1);
-    filters.push_back(filter2);
+    FilterGroup filters1;
+    FilterGroup filters2;
+    filters1.push_back(filter1);
+    filters2.push_back(filter2);
+
+    FilterSet filterSet;
+    filterSet.push_back(filters1);
+    filterSet.push_back(filters2);
 
     clock_t t1, t2;
 
     t1 = clock();
-    std::vector<Doc> hostqueryResult = driver.getDocumentsForFilterSet(filters);
+    std::vector<Doc> hostqueryResult = driver.getDocumentsForFilterSet(filterSet);
     t2 = clock();
 
     float diff1 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
@@ -317,9 +288,11 @@ int main(int argc, char * argv[]){
             float diff2 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
             printf("update single element latency = %fms\n", diff2);
 
-            std::vector<CoreTupleType> filterSet;
-            filterSet.push_back(newEntry);
-            std::vector<Doc> updatedElement = driver.getDocumentsForFilterSet(filterSet);
+            FilterGroup filterGroup;
+            filterGroup.push_back(newEntry);
+            FilterSet toCheck;
+            toCheck.push_back(filterGroup);
+            std::vector<Doc> updatedElement = driver.getDocumentsForFilterSet(toCheck);
             for(std::vector<Doc>::iterator updatedIter = updatedElement.begin();
                     updatedIter != updatedElement.end(); ++updatedIter){
                 printf("Updated value for id %llu = %lld\n", updatedIter->kvPair.id, updatedIter->kvPair.data.bigVal);
@@ -331,9 +304,11 @@ int main(int argc, char * argv[]){
     t2 = clock();
     float deleteDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
 
-    std::vector<CoreTupleType> searchForLastEntry;
+    FilterGroup searchForLastEntry;
     searchForLastEntry.push_back(lastEntry);
-    std::vector<Doc> lastEntryResult = driver.getDocumentsForFilterSet(searchForLastEntry);
+    FilterSet searchForLastEntryFilter;
+    searchForLastEntryFilter.push_back(searchForLastEntry);
+    std::vector<Doc> lastEntryResult = driver.getDocumentsForFilterSet(searchForLastEntryFilter);
     if(lastEntryResult.size() == 0){
         printf("Successfully deleted last entry. Delete took %fms.\n", deleteDiff);
     }else{

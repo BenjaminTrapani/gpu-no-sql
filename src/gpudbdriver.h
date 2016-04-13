@@ -10,6 +10,7 @@
 #include "thrust/tuple.h"
 #include "thrust/device_vector.h"
 #include "thrust/host_vector.h"
+#include "FilterSet.hpp"
 
 // Caller must free memory
 namespace GPUDB {
@@ -34,7 +35,7 @@ namespace GPUDB {
         void create(const Doc & toCreate);
         void batchCreate(const std::vector<Doc> & docs);
 
-        std::vector<Doc> getDocumentsForFilterSet(const std::vector<CoreTupleType> & filters);
+        std::vector<Doc> getDocumentsForFilterSet(const FilterSet& filters);
         void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
         void deleteBy(const CoreTupleType &searchFilter);
 
@@ -44,11 +45,11 @@ namespace GPUDB {
 
     private:
         void create(const CoreTupleType &object);
-        void searchEntries(const CoreTupleType & filter, DeviceVector_t * resultsFromThisStage,
+        void searchEntries(const FilterGroup & filter, DeviceVector_t * resultsFromThisStage,
                             DeviceVector_t * resultsFromLastStage,
                            const size_t numToSearch,
                            size_t &numFound);
-        QueryResult getRootsForFilterSet(const std::vector<CoreTupleType>& filters);
+        QueryResult getRootsForFilterSet(const FilterSet& filters);
         void getEntriesForRoots(const QueryResult & rootResult, std::vector<Doc> & result);
         std::vector<Doc> getEntriesForRoots(const QueryResult & rootResults);
 
