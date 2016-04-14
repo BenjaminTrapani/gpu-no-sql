@@ -34,7 +34,7 @@ GPUDBDriver::GPUDBDriver(){
     cudaGetDeviceProperties(&propOfInterest, 0);
     size_t memBytes = propOfInterest.totalGlobalMem;
     size_t allocSize = memBytes*0.05f;
-    numEntries = allocSize/sizeof(CoreTupleType);
+    numEntries = allocSize/sizeof(Entry);
     printf("Num entries = %i\n", numEntries);
 
     //buffer allocation and initialization
@@ -54,7 +54,7 @@ GPUDBDriver::~GPUDBDriver(){
     hostResultBuffer=0;
 }
 
-void GPUDBDriver::create(const CoreTupleType &object){
+void GPUDBDriver::create(const Entry &object){
     deviceEntries.push_back(object);
 }
 
@@ -71,12 +71,12 @@ void GPUDBDriver::batchCreate(const std::vector<Doc> & docs){
     }
 }
 
-void GPUDBDriver::update(const CoreTupleType &searchFilter, const CoreTupleType &updates){
-    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), ModifyTuple(updates),
-                         IsFullTupleMatch(searchFilter));
+void GPUDBDriver::update(const Entry &searchFilter, const Entry &updates){
+    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), ModifyEntry(updates),
+                         IsFullEntryMatch(searchFilter));
 }
-void GPUDBDriver::deleteBy(const CoreTupleType &searchFilter){
-    thrust::remove_if(deviceEntries.begin(), deviceEntries.end(), IsFullTupleMatch(searchFilter));
+void GPUDBDriver::deleteBy(const Entry &searchFilter){
+    thrust::remove_if(deviceEntries.begin(), deviceEntries.end(), IsFullEntryMatch(searchFilter));
 }
 
 void GPUDBDriver::searchEntries(const FilterGroup & filters, DeviceVector_t * resultsFromThisStage,
@@ -90,7 +90,7 @@ void GPUDBDriver::searchEntries(const FilterGroup & filters, DeviceVector_t * re
             ++filterIter) {
         for (size_t i = 0; i < numToSearch; i++) {
             lastIter = copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
-                               resultsFromThisStage->begin() + numFound, FetchTupleWithParentIDs(
+                               resultsFromThisStage->begin() + numFound, FetchEntryWithParentIDs(
                             thrust::raw_pointer_cast(resultsFromLastStage->data()),
                             i,
                             *filterIter));
@@ -103,7 +103,7 @@ void GPUDBDriver::searchEntries(const FilterGroup & filters, DeviceVector_t * re
 QueryResult GPUDBDriver::getRootsForFilterSet(const FilterSet & filters){
     DeviceVector_t::iterator lastIter = copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
                                                 deviceIntermediateBuffer1->begin(),
-                                                IsPartialTupleMatch(filters[0][0]));
+                                                IsPartialEntryMatch(filters[0][0]));
     size_t lastNumFound = thrust::distance(deviceIntermediateBuffer1->begin(), lastIter);
     size_t curNumFound = 0;
 
@@ -153,7 +153,7 @@ void GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult, std::vector
         DeviceVector_t::iterator destIter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset + numFound + rootResult.numItems;
         lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
                                    destIter,
-                                   FetchDescendentTuple(thrust::raw_pointer_cast(&(*iter))));
+                                   FetchDescendentEntry(thrust::raw_pointer_cast(&(*iter))));
         size_t mostRecentFoundCount = thrust::distance(destIter, lastIter);
         numFound += mostRecentFoundCount;
 
@@ -179,11 +179,12 @@ std::vector<Doc> GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult)
 std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters){
     QueryResult rootResult = getRootsForFilterSet(filters);
 
-    if(rootResult.numItems)
+    if (rootResult.numItems)
         return getEntriesForRoots(rootResult);
 
     return std::vector<Doc>(0);
 }
+
 void generateNestedDoc(size_t nestings, Doc * parent, size_t beginIndex){
     Entry curVal;
     curVal.key = beginIndex;
@@ -216,7 +217,7 @@ void runDeepNestingTests(){
 
     FilterSet filterByFirstFourNest;
     filterByFirstFourNest.reserve(4);
-    for(int i = 5; i >= 2; i--){
+    for(int i = 5; i >= 3; i--){
         Entry curFilter;
         curFilter.key = i;
         curFilter.valType=GPUDB_BGV;

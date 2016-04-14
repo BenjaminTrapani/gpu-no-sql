@@ -1,5 +1,5 @@
 //
-// Created by Benjamin Trapani on 4/12/16.
+// Entry Data Definition
 //
 
 #ifndef GPU_NO_SQL_ENTRY_H
@@ -14,7 +14,6 @@ namespace GPUDB {
         GPUDB_STR,
         GPUDB_BGV,
         GPUDB_DOC,
-        GPUDB_ANY
     };
 
     union GPUDB_Data {

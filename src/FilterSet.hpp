@@ -1,5 +1,5 @@
 //
-// Created by Benjamin Trapani on 4/13/16.
+// Filter Namespace Info
 //
 
 #ifndef GPU_NO_SQL_FILTERSET_HPP

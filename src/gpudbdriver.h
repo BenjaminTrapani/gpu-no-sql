@@ -7,17 +7,15 @@
 
 #include "Entry.h"
 #include "Doc.h"
-#include "thrust/tuple.h"
 #include "thrust/device_vector.h"
 #include "thrust/host_vector.h"
 #include "FilterSet.hpp"
 
 // Caller must free memory
 namespace GPUDB {
-    typedef Entry CoreTupleType;
     typedef unsigned long long int GPUSizeType;
-    typedef thrust::device_vector<CoreTupleType> DeviceVector_t;
-    typedef thrust::host_vector<CoreTupleType> HostVector_t;
+    typedef thrust::device_vector<Entry> DeviceVector_t;
+    typedef thrust::host_vector<Entry> HostVector_t;
 
     struct QueryResult{
         DeviceVector_t * deviceResultPointer;
@@ -36,8 +34,10 @@ namespace GPUDB {
         void batchCreate(const std::vector<Doc> & docs);
 
         std::vector<Doc> getDocumentsForFilterSet(const FilterSet& filters);
-        void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
-        void deleteBy(const CoreTupleType &searchFilter);
+
+        void update(const Entry &searchFilter, const Entry &updates);
+
+        void deleteBy(const Entry &searchFilter);
 
         inline size_t getTableSize()const{
             return numEntries;
@@ -47,7 +47,7 @@ namespace GPUDB {
         }
 
     private:
-        void create(const CoreTupleType &object);
+        void create(const Entry &object);
         void searchEntries(const FilterGroup & filter, DeviceVector_t * resultsFromThisStage,
                             DeviceVector_t * resultsFromLastStage,
                            const size_t numToSearch,
