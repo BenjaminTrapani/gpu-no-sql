@@ -42,6 +42,9 @@ namespace GPUDB {
         inline size_t getTableSize()const{
             return numEntries;
         }
+        inline size_t getNumEntries()const{
+            return deviceEntries.size();
+        }
 
     private:
         void create(const CoreTupleType &object);

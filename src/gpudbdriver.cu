@@ -184,43 +184,65 @@ std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters
 
     return std::vector<Doc>(0);
 }
-void generateNestedDoc(size_t nestings, std::vector<Doc> & result, size_t beginIndex){
+void generateNestedDoc(size_t nestings, Doc * parent, size_t beginIndex){
     Entry curVal;
     curVal.key = beginIndex;
     curVal.valType = GPUDB_BGV;
     curVal.data.bigVal = beginIndex;
     curVal.id = beginIndex;
-    curVal.parentID = beginIndex-1;
 
     Doc intermediate(curVal);
-    result.push_back(intermediate);
+    Doc * permIntermediate = parent->addChild(intermediate);
 
-    generateNestedDoc(nestings-1, intermediate.children, beginIndex+1);
+    if(nestings>0)
+        generateNestedDoc(nestings-1, permIntermediate, beginIndex+1);
 }
 void runDeepNestingTests(){
+    printf("Beginning deep nesting test:\n");
+
     GPUDBDriver driver;
-    Doc root;
-    root.kvPair.key=1;
-    root.kvPair.data.bigVal=1;
-    root.kvPair.valType=GPUDB_BGV;
 
-    for(size_t i = 2; i < driver.getTableSize()/8; i++){
-        generateNestedDoc(4, root.children, i*4);
+    for(size_t i = 2; i < driver.getTableSize(); i+=5){
+        Doc root;
+        root.kvPair.key=i;
+        root.kvPair.data.bigVal=i;
+        root.kvPair.valType=GPUDB_BGV;
+        root.kvPair.id = i;
+        root.kvPair.parentID = 0;
+        generateNestedDoc(3, &root, i+1);
+        driver.create(root);
     }
+    printf("Database has %i entries\n", driver.getNumEntries());
 
-    std::vector<CoreTupleType> filterByFirstFourNest;
-    for(int i = 8; i < 12; i++){
+    FilterSet filterByFirstFourNest;
+    filterByFirstFourNest.reserve(4);
+    for(int i = 5; i >= 2; i--){
         Entry curFilter;
         curFilter.key = i;
         curFilter.valType=GPUDB_BGV;
         curFilter.data.bigVal = i;
-        curFilter.id=i;
-        curFilter.parentID=i-1;
+        FilterGroup curGroup;
+        curGroup.push_back(curFilter);
+        filterByFirstFourNest.push_back(curGroup);
     }
+
+    clock_t t1, t2;
+
+    t1 = clock();
+    std::vector<Doc> result = driver.getDocumentsForFilterSet(filterByFirstFourNest);
+    t2 = clock();
+    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("Deep filter took %fms\n", diff);
+    printf("Num results = %i\n", result.size());
+    for(std::vector<Doc>::iterator iter = result.begin(); iter != result.end(); ++iter){
+        printf(iter->toString().c_str());
+    }
+
+    printf("Deep nesting test finished.\n\n");
 }
 
 int main(int argc, char * argv[]){
-    //runDeepNestingTests();
+    runDeepNestingTests();
 
     GPUDBDriver driver;
     printf("sizeof entry = %i\n", sizeof(Entry));

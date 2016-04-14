@@ -45,7 +45,7 @@ namespace GPUDB {
             return true; // TODO smarter comparison
         }
 
-        bool operator==(const Entry &val) const {
+        inline bool operator==(const Entry &val) const {
             return key == val.key && valType == val.valType && data.bigVal == val.data.bigVal;
         }
 
