@@ -30,6 +30,87 @@ namespace GPUDB{
         CoreTupleType _filter;
     };
 
+    struct IsSelectedWithParentID : thrust::unary_function<CoreTupleType, bool>{
+        inline IsSelectedWithParentID(const unsigned long long int desiredParentID):
+                _desiredParentID(desiredParentID){}
+
+        __device__ __host__
+        inline bool operator()(const CoreTupleType & val)const{
+            return val.selected && val.parentID == _desiredParentID;
+        }
+
+    private:
+        unsigned long long int _desiredParentID;
+    };
+
+    struct FetchTupleWithParentID : thrust::unary_function<CoreTupleType,bool>{
+        inline FetchTupleWithParentID(const CoreTupleType & filter,
+                                       const CoreTupleType* validIndex):_filter(filter),
+        _validIndex(validIndex){
+        }
+
+        __device__ __host__
+        inline bool operator()(const CoreTupleType & ival)const{
+            return _validIndex->parentID == ival.id && ival == _filter;
+        }
+
+    private:
+        const CoreTupleType _filter;
+        const CoreTupleType * _validIndex;
+    };
+
+    struct IsPartialTupleMatchAndChildSelected : thrust::unary_function<CoreTupleType, bool>{
+        inline IsPartialTupleMatchAndChildSelected(const CoreTupleType & filter, const CoreTupleType * data,
+        const size_t dataLen)
+                :_filter(filter), _data(data), _dataLen(dataLen){}
+
+        __device__ __host__
+        inline bool operator()(const CoreTupleType & val)const{
+            return val == _filter; //&& thrust::find_if(_data, _data + _dataLen, IsSelectedWithParentID(val.id));
+        }
+
+    private:
+        CoreTupleType _filter;
+        const CoreTupleType * _data;
+        const size_t _dataLen;
+    };
+
+    struct IsLayerNotEqualTo : thrust::unary_function<CoreTupleType, bool>{
+        inline IsLayerNotEqualTo(const unsigned long int layer):_layer(layer){}
+
+        __device__ __host__
+        inline bool operator()(const CoreTupleType & val)const{
+            return val.layer != _layer;
+        }
+
+    private:
+        const unsigned long int _layer;
+    };
+
+    struct IsTupleSelected : thrust::unary_function<CoreTupleType, bool>{
+        inline IsTupleSelected(const unsigned long int layer):_layer(layer){}
+
+        __device__ __host__
+        inline bool operator()(const CoreTupleType & val)const{
+            return val.selected && val.layer == _layer;
+        }
+
+    private:
+        unsigned long int _layer;
+    };
+
+    struct EntryLessThan : thrust::unary_function<CoreTupleType, bool>{
+        inline EntryLessThan(const CoreTupleType & filter):_filter(filter){}
+
+        __device__ __host__
+        inline bool operator()(const CoreTupleType & val)const{
+            return val.key == _filter.key && val.valType == _filter.valType && val.data.bigVal < _filter.data.bigVal;
+        }
+
+        private:
+            CoreTupleType _filter;
+    };
+
     struct ExtractParentID : thrust::unary_function<CoreTupleType, GPUSizeType>{
         __device__ __host__
         inline GPUSizeType operator() (const CoreTupleType & val)const{
@@ -49,6 +130,30 @@ namespace GPUDB{
         }
     private:
         const CoreTupleType _updates;
+    };
+
+    struct SelectTuple : thrust::unary_function<CoreTupleType, CoreTupleType>{
+        inline SelectTuple(unsigned long int layer):_layer(layer){}
+
+        __device__ __host__
+        inline CoreTupleType operator() (const CoreTupleType & val)const{
+            CoreTupleType result = val;
+            result.selected = true;
+            result.layer = _layer;
+            return result;
+        }
+
+    private:
+        const unsigned long int _layer;
+    };
+
+    struct UnselectTuple : thrust::unary_function<CoreTupleType, CoreTupleType>{
+        __device__ __host__
+        inline CoreTupleType operator() (const CoreTupleType & val)const{
+            CoreTupleType result = val;
+            result.selected = false;
+            return result;
+        }
     };
 
     struct FetchTupleWithParentIDs : thrust::unary_function<CoreTupleType,bool>{

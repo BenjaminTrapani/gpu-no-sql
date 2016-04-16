@@ -39,6 +39,7 @@ GPUDBDriver::GPUDBDriver(){
 
     //buffer allocation and initialization
     deviceEntries.reserve(numEntries);
+
     deviceIntermediateBuffer1 = new DeviceVector_t(numEntries);
     deviceIntermediateBuffer2 = new DeviceVector_t(numEntries);
     hostResultBuffer = new HostVector_t(numEntries);
@@ -100,6 +101,24 @@ void GPUDBDriver::searchEntries(const FilterGroup & filters, DeviceVector_t * re
     }
 }
 
+void GPUDBDriver::optimizedSearchEntries(const FilterGroup & filterGroup, const unsigned long int layer){
+    for(FilterGroup::const_iterator filterIter = filterGroup.begin(); filterIter != filterGroup.end();
+        ++filterIter){
+        DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
+                                                            IsTupleSelected(layer));
+        while(lastIter != deviceEntries.end()){
+            thrust::transform_if(deviceEntries.begin(), deviceEntries.end(),
+                                 deviceEntries.begin(),
+                                 SelectTuple(layer+1),
+                                 FetchTupleWithParentID(*filterIter,
+                                                    thrust::raw_pointer_cast(&(*lastIter))));
+
+            lastIter = thrust::find_if(lastIter+1, deviceEntries.end(),
+                                       IsTupleSelected(layer));
+        }
+    }
+}
+
 QueryResult GPUDBDriver::getRootsForFilterSet(const FilterSet & filters){
     DeviceVector_t::iterator lastIter = copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
                                                 deviceIntermediateBuffer1->begin(),
@@ -133,6 +152,37 @@ QueryResult GPUDBDriver::getRootsForFilterSet(const FilterSet & filters){
         result.numItems = 0;
         result.deviceResultPointer = 0;
     }
+    return result;
+}
+
+QueryResult GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filters){
+    clock_t t1, t2;
+    t1 = clock();
+
+    thrust::transform(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), UnselectTuple());
+    for(FilterGroup::const_iterator firstGroupIter = filters[0].begin(); firstGroupIter != filters[0].end();
+        ++firstGroupIter){
+        thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), SelectTuple(1),
+                             IsPartialTupleMatch(*firstGroupIter));
+    }
+    unsigned long int layer = 1;
+    for(FilterSet::const_iterator iter = filters.begin()+1; iter != filters.end(); ++iter){
+        optimizedSearchEntries(*iter, layer);
+        layer++;
+    }
+    //thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), UnselectTuple(), IsLayerNotEqualTo(layer-1));
+    t2 = clock();
+    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("Everything except copy_if in optimized get roots took %fms\n", diff);
+
+    DeviceVector_t::iterator lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(),
+                                                    deviceIntermediateBuffer1->begin(), IsTupleSelected(layer));
+
+
+    QueryResult result;
+    result.numItems = thrust::distance(deviceIntermediateBuffer1->begin(), lastIter);
+    result.deviceResultPointer = deviceIntermediateBuffer1;
+    result.beginOffset = 0;
     return result;
 }
 
@@ -177,7 +227,14 @@ std::vector<Doc> GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult)
 }
 
 std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters){
-    QueryResult rootResult = getRootsForFilterSet(filters);
+    clock_t t1, t2;
+
+    t1 = clock();
+    QueryResult rootResult = optimizedGetRootsForFilterSet(filters);
+    t2 = clock();
+    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("optimized get roots for filter set took %fms\n", diff);
+    //QueryResult rootResult = optimizedGetRootsForFilterSet(filters);//getRootsForFilterSet(filters);
 
     if(rootResult.numItems)
         return getEntriesForRoots(rootResult);
