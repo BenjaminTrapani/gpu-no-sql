@@ -64,7 +64,7 @@ namespace GPUDB {
         // 1.
         // Make a way to search a level by only checking it is a doc
         // Needed For: Searching where what Doc it belongs to doesn't matter, but the parent of this Doc does
-        // Suggested Solution: When Type is GPUDB_ADC, run the comparator that ignores both key and value, only checks
+        // Suggested Solution: When Type is GPUDB_ADC, run the comparator that ignores both key and value, only checks type
 
         // 2.
         // Make a way to match the key but not the value
