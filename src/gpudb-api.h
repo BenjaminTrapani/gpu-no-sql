@@ -6,37 +6,42 @@
 #define GPU_NO_SQL_GPUDB_API_H
 
 #include <string>
+#include <vector>
 #include "Entry.h"
 #include "QueryResult.h"
-#include "CoparatorType.h
-"
+#include "ComparatorType.h"
 
-// Document Identification
-int getRootDoc();
-int getDoc(std::vector<std::string> strings);
+using namespace GPUDB;
 
-// Creation
-int newDoc(int docID, std::string key);
-int addToDoc(int docID, std::string & key, std::string & value, GPUDB_Type type);
-int sendAdditions(int docID);
+class GPU_NOSQL_DB {
+public:
+    // Document Identification
+    int getRootDoc();
+    int getDoc(std::vector<std::string> strings);
 
-// Reading
+    // Filter Creation
+    int newFilter(int docID);
+    int addToFilter(int filterID, std::vector<std::string> keys);
+    int addToFilter(int filterID, std::vector<std::string> keys, std::string & value, GPUDB_COMP comp);
 
-// TODO
+    // Creation
+    int newDoc(int docID, std::string key);
+    int addToDoc(int docID, std::string & key, std::string & value, GPUDB_Type type);
+    int batchAdd(int docID, std::vector<std::string> & keys, std::vector<std::string> & values, GPUDB_Type type);
 
-// Top Down Searching
-// 1. Find Doc ID
-// 2. Filter By Entries with that Parent
-int newFilter(int docID);
-int addToFilter(int filterID, std::vector<std::string> keys, std::string & value, GPUDB_COMP comp);
-QueryResult query(int filterID);
+    // Querying
+    GPUDB_QueryResult query(int filterID);
 
-// Updating
-int updateOnDoc(int docID, std::string & key, std::string & value);
-int updateOnDoc(int docID, std::string & key, std::string & value, GPUDB_Type type);
+    // Updating - single filter only or error out
+    int updateOnDoc(int filterID, std::string & value);
+    int updateOnDoc(int filterID, std::string & value, GPUDB_Type type);
 
-// Deleting
-int deleteFromDoc(int docID, std::string & key);
+    // Deleting
+    int deleteFromDoc(int filterID);
+private:
+
+};
+
 
 
 #endif //GPU_NO_SQL_GPUDB_API_H

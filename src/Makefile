@@ -12,3 +12,9 @@ clean:
 
 check: gpudb
 	./gpudb
+
+topapi: gpudb
+	gcc -g gpudb-api.cpp -o GPUDB
+
+topcheck: topapi
+	./GPUDB

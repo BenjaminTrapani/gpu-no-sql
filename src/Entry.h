@@ -14,17 +14,13 @@ namespace GPUDB {
         GPUDB_STR,
         GPUDB_BGV,
         GPUDB_DOC,
+        GPUDB_ADC,
+        GPUDB_ANY
     };
 
-    union GPUDB_Data {
-        bool b;
-        int n;
-        float f;
-        char c;
-        long long int s;
+    typedef struct Data {
         long long int bigVal;
-        int d;
-    };
+    } GPUDB_Data;
 
 // Entry Related Structures
 

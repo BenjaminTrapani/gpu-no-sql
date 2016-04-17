@@ -29,6 +29,9 @@ def runSSHWithCommand(command):
 def runMakeCheck():
     runSSHWithCommand('source ~/.profile && cd ~/gpudb/gpu-no-sql/src && make clean &&  make check')
 
+def runMakeTopCheck():
+    runSSHWithCommand('source ~/.profile && cd ~/gpudb/gpu-no-sql/src && make clean &&  make topcheck')
+
 def cleanOldGPUDB():
     print('removing old files in ~/gpudb/gpu-no-sql/')
     runSSHWithCommand('rm -rf ~/gpudb/gpu-no-sql/')
@@ -49,6 +52,8 @@ try:
         submission.expect(pexpect.EOF)
         print('copy to remote complete, running make check')
         runMakeCheck()
+        print('copy to remote complete, running make topcheck')
+        runMakeTopCheck()
 
 except Exception as e:
     print e;

@@ -5,7 +5,7 @@
 #ifndef GPU_NO_SQL_FUNCTORS_H
 #define GPU_NO_SQL_FUNCTORS_H
 
-namespace GPUDB{
+namespace GPUDB {
     struct IsPartialEntryMatch : thrust::unary_function<Entry,bool>{
         inline IsPartialEntryMatch(const Entry & filter):_filter(filter){}
 

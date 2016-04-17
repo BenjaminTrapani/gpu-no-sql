@@ -7,8 +7,10 @@
 
 // TODO
 
-typdef struct QueryResult {
-    int todo;
-} QueryResult;
+namespace GPUDB {
+    typedef struct QueryResult {
+        int todo;
+    } GPUDB_QueryResult;
+}
 
 #endif //GPU_NO_SQL_QUERYRESULT_H
