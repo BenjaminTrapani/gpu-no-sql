@@ -54,7 +54,7 @@ namespace GPUDB {
                            const size_t numToSearch,
                            size_t &numFound);
         QueryResult getRootsForFilterSet(const FilterSet& filters);
-        QueryResult optimizedGetRootsForFilterSet(const FilterSet & filters);
+        void optimizedGetRootsForFilterSet(const FilterSet & filters);
 
         void getEntriesForRoots(const QueryResult & rootResult, std::vector<Doc> & result);
         std::vector<Doc> getEntriesForRoots(const QueryResult & rootResults);

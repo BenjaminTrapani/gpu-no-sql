@@ -184,6 +184,19 @@ namespace GPUDB{
     private:
         const CoreTupleType * _desiredParentID;
     };
+
+    struct FetchDescendentTupleIfSelected : thrust::unary_function<CoreTupleType, bool>{
+        inline FetchDescendentTupleIfSelected(const CoreTupleType * desiredParentID):
+                _desiredParentID(desiredParentID){}
+
+        __device__ __host__
+        inline bool operator()(const CoreTupleType & ival)const{
+            return ival.selected && ival.parentID == _desiredParentID->id && ival.parentID!=0;
+        }
+
+    private:
+        const CoreTupleType * _desiredParentID;
+    };
 }
 
 #endif //GPU_NO_SQL_FUNCTORS_H

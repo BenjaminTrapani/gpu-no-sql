@@ -33,7 +33,7 @@ GPUDBDriver::GPUDBDriver(){
     cudaDeviceProp propOfInterest;
     cudaGetDeviceProperties(&propOfInterest, 0);
     size_t memBytes = propOfInterest.totalGlobalMem;
-    size_t allocSize = memBytes*0.05f;
+    size_t allocSize = memBytes*0.08f;
     numEntries = allocSize/sizeof(CoreTupleType);
     printf("Num entries = %i\n", numEntries);
 
@@ -104,6 +104,10 @@ void GPUDBDriver::searchEntries(const FilterGroup & filters, DeviceVector_t * re
 void GPUDBDriver::optimizedSearchEntries(const FilterGroup & filterGroup, const unsigned long int layer){
     for(FilterGroup::const_iterator filterIter = filterGroup.begin(); filterIter != filterGroup.end();
         ++filterIter){
+        thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), SelectTuple(layer+1),
+                             IsPartialTupleMatch(*filterIter));
+
+        /*
         DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
                                                             IsTupleSelected(layer));
         while(lastIter != deviceEntries.end()){
@@ -114,10 +118,11 @@ void GPUDBDriver::optimizedSearchEntries(const FilterGroup & filterGroup, const 
                                                     thrust::raw_pointer_cast(&(*lastIter))));
 
             lastIter = thrust::find_if(lastIter+1, deviceEntries.end(),
-                                       IsTupleSelected(layer));
+                                       IsTupleSelected(layer));*/
         }
     }
 }
+
 
 QueryResult GPUDBDriver::getRootsForFilterSet(const FilterSet & filters){
     DeviceVector_t::iterator lastIter = copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
@@ -155,7 +160,7 @@ QueryResult GPUDBDriver::getRootsForFilterSet(const FilterSet & filters){
     return result;
 }
 
-QueryResult GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filters){
+void GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filters){
     clock_t t1, t2;
     t1 = clock();
 
@@ -175,7 +180,7 @@ QueryResult GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filters
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("Everything except copy_if in optimized get roots took %fms\n", diff);
 
-    DeviceVector_t::iterator lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(),
+    /*DeviceVector_t::iterator lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(),
                                                     deviceIntermediateBuffer1->begin(), IsTupleSelected(layer));
 
 
@@ -183,7 +188,7 @@ QueryResult GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filters
     result.numItems = thrust::distance(deviceIntermediateBuffer1->begin(), lastIter);
     result.deviceResultPointer = deviceIntermediateBuffer1;
     result.beginOffset = 0;
-    return result;
+    return result;*/
 }
 
 void GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult, std::vector<Doc> & result){
@@ -219,6 +224,41 @@ void GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult, std::vector
     }
 }
 
+void GPUDBDriver::optimizedGetEntriesForRoots(std::vector<Doc> & result){
+    DeviceVector_t::iterator lastIter;
+    size_t numFound = 0;
+    thrust::copy(rootResult.deviceResultPointer->begin() + rootResult.beginOffset,
+                 rootResult.deviceResultPointer->begin() + rootResult.beginOffset + rootResult.numItems,
+                 hostResultBuffer->begin() + rootResult.beginOffset);
+
+    size_t iterIndex = 0;
+    for(DeviceVector_t::const_iterator iter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset;
+        iter != rootResult.deviceResultPointer->begin() + rootResult.beginOffset + rootResult.numItems; ++iter){
+
+        Doc curDocVal((*hostResultBuffer)[rootResult.beginOffset + iterIndex]);
+        result.push_back(curDocVal);
+
+        DeviceVector_t::iterator destIter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset + numFound + rootResult.numItems;
+        lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
+                                   destIter,
+                                   FetchDescendentTupleIfSelected(thrust::raw_pointer_cast(&(*iter))));
+        size_t mostRecentFoundCount = thrust::distance(destIter, lastIter);
+        if(!mostRecentFoundCount && the current level is not the deepest level)
+            result.remove(curDocVal)
+        numFound += mostRecentFoundCount;
+
+        if(mostRecentFoundCount) {
+            QueryResult newQuery;
+            newQuery.deviceResultPointer = rootResult.deviceResultPointer;
+            newQuery.beginOffset = rootResult.beginOffset + numFound;
+            newQuery.numItems = mostRecentFoundCount;
+            getEntriesForRoots(newQuery, result[result.size()-1].children);
+        }
+
+        iterIndex++;
+    }
+}
+
 std::vector<Doc> GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult){
     std::vector<Doc> result;
     getEntriesForRoots(rootResult, result);
@@ -233,8 +273,7 @@ std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters
     QueryResult rootResult = optimizedGetRootsForFilterSet(filters);
     t2 = clock();
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("optimized get roots for filter set took %fms\n", diff);
-    //QueryResult rootResult = optimizedGetRootsForFilterSet(filters);//getRootsForFilterSet(filters);
+    printf("get roots for filter set took %fms\n", diff);
 
     if(rootResult.numItems)
         return getEntriesForRoots(rootResult);
