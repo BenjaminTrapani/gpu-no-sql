@@ -35,7 +35,6 @@ namespace GPUDB {
         GPUDB_Type valType;
         GPUDB_Data data;
         unsigned long long int parentID;
-
         //runtime data used in searches
         bool selected;
         unsigned long int layer;

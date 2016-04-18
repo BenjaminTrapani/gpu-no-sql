@@ -33,7 +33,7 @@ GPUDBDriver::GPUDBDriver(){
     cudaDeviceProp propOfInterest;
     cudaGetDeviceProperties(&propOfInterest, 0);
     size_t memBytes = propOfInterest.totalGlobalMem;
-    size_t allocSize = memBytes*0.08f;
+    size_t allocSize = memBytes*0.12f;
     numEntries = allocSize/sizeof(CoreTupleType);
     printf("Num entries = %i\n", numEntries);
 
@@ -41,15 +41,15 @@ GPUDBDriver::GPUDBDriver(){
     deviceEntries.reserve(numEntries);
 
     deviceIntermediateBuffer1 = new DeviceVector_t(numEntries);
-    deviceIntermediateBuffer2 = new DeviceVector_t(numEntries);
+    //deviceIntermediateBuffer2 = new DeviceVector_t(numEntries);
     hostResultBuffer = new HostVector_t(numEntries);
 }
 GPUDBDriver::~GPUDBDriver(){
     delete deviceIntermediateBuffer1;
     deviceIntermediateBuffer1=0;
 
-    delete deviceIntermediateBuffer2;
-    deviceIntermediateBuffer2=0;
+    //delete deviceIntermediateBuffer2;
+    //deviceIntermediateBuffer2=0;
 
     delete hostResultBuffer;
     hostResultBuffer=0;
@@ -59,15 +59,15 @@ void GPUDBDriver::create(const CoreTupleType &object){
     deviceEntries.push_back(object);
 }
 
-void GPUDBDriver::create(const Doc & toCreate){
+void GPUDBDriver::create(const Doc & toCreate) {
     create(toCreate.kvPair);
     for (std::vector<Doc>::const_iterator iter = toCreate.children.begin(); iter != toCreate.children.end(); ++iter) {
         create(*iter);
     }
 }
 
-void GPUDBDriver::batchCreate(const std::vector<Doc> & docs){
-    for(std::vector<Doc>::const_iterator iter = docs.begin(); iter != docs.end(); ++iter){
+void GPUDBDriver::batchCreate(std::vector<Doc> & docs){
+    for(std::vector<Doc>::iterator iter = docs.begin(); iter != docs.end(); ++iter){
         create(*iter);
     }
 }
@@ -104,10 +104,7 @@ void GPUDBDriver::searchEntries(const FilterGroup & filters, DeviceVector_t * re
 void GPUDBDriver::optimizedSearchEntries(const FilterGroup & filterGroup, const unsigned long int layer){
     for(FilterGroup::const_iterator filterIter = filterGroup.begin(); filterIter != filterGroup.end();
         ++filterIter){
-        thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), SelectTuple(layer+1),
-                             IsPartialTupleMatch(*filterIter));
 
-        /*
         DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
                                                             IsTupleSelected(layer));
         while(lastIter != deviceEntries.end()){
@@ -118,52 +115,12 @@ void GPUDBDriver::optimizedSearchEntries(const FilterGroup & filterGroup, const 
                                                     thrust::raw_pointer_cast(&(*lastIter))));
 
             lastIter = thrust::find_if(lastIter+1, deviceEntries.end(),
-                                       IsTupleSelected(layer));*/
+                                       IsTupleSelected(layer));
         }
     }
 }
 
-
-QueryResult GPUDBDriver::getRootsForFilterSet(const FilterSet & filters){
-    DeviceVector_t::iterator lastIter = copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
-                                                deviceIntermediateBuffer1->begin(),
-                                                IsPartialTupleMatch(filters[0][0]));
-    size_t lastNumFound = thrust::distance(deviceIntermediateBuffer1->begin(), lastIter);
-    size_t curNumFound = 0;
-
-    DeviceVector_t * mostRecentResult = deviceIntermediateBuffer1;
-
-    for(FilterSet::const_iterator iter = filters.begin()+1; iter != filters.end(); ++iter){
-        size_t iterDistance = std::distance(filters.begin(), iter);
-        if(iterDistance % 2 == 0){
-            searchEntries(*iter, deviceIntermediateBuffer1, deviceIntermediateBuffer2, lastNumFound, curNumFound);
-            mostRecentResult = deviceIntermediateBuffer1;
-        }else{
-            searchEntries(*iter, deviceIntermediateBuffer2, deviceIntermediateBuffer1, lastNumFound, curNumFound);
-            mostRecentResult = deviceIntermediateBuffer2;
-        }
-        if(curNumFound==0) {
-            break;
-        }else{
-            lastNumFound = curNumFound;
-        }
-    }
-
-    QueryResult result;
-    if(lastNumFound!=0) {
-        result.numItems = lastNumFound;
-        result.deviceResultPointer = mostRecentResult;
-    }else{
-        result.numItems = 0;
-        result.deviceResultPointer = 0;
-    }
-    return result;
-}
-
-void GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filters){
-    clock_t t1, t2;
-    t1 = clock();
-
+QueryResult GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filters){
     thrust::transform(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), UnselectTuple());
     for(FilterGroup::const_iterator firstGroupIter = filters[0].begin(); firstGroupIter != filters[0].end();
         ++firstGroupIter){
@@ -175,12 +132,8 @@ void GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filters){
         optimizedSearchEntries(*iter, layer);
         layer++;
     }
-    //thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), UnselectTuple(), IsLayerNotEqualTo(layer-1));
-    t2 = clock();
-    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("Everything except copy_if in optimized get roots took %fms\n", diff);
 
-    /*DeviceVector_t::iterator lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(),
+    DeviceVector_t::iterator lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(),
                                                     deviceIntermediateBuffer1->begin(), IsTupleSelected(layer));
 
 
@@ -188,7 +141,7 @@ void GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filters){
     result.numItems = thrust::distance(deviceIntermediateBuffer1->begin(), lastIter);
     result.deviceResultPointer = deviceIntermediateBuffer1;
     result.beginOffset = 0;
-    return result;*/
+    return result;
 }
 
 void GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult, std::vector<Doc> & result){
@@ -210,41 +163,6 @@ void GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult, std::vector
                                    destIter,
                                    FetchDescendentTuple(thrust::raw_pointer_cast(&(*iter))));
         size_t mostRecentFoundCount = thrust::distance(destIter, lastIter);
-        numFound += mostRecentFoundCount;
-
-        if(mostRecentFoundCount) {
-            QueryResult newQuery;
-            newQuery.deviceResultPointer = rootResult.deviceResultPointer;
-            newQuery.beginOffset = rootResult.beginOffset + numFound;
-            newQuery.numItems = mostRecentFoundCount;
-            getEntriesForRoots(newQuery, result[result.size()-1].children);
-        }
-
-        iterIndex++;
-    }
-}
-
-void GPUDBDriver::optimizedGetEntriesForRoots(std::vector<Doc> & result){
-    DeviceVector_t::iterator lastIter;
-    size_t numFound = 0;
-    thrust::copy(rootResult.deviceResultPointer->begin() + rootResult.beginOffset,
-                 rootResult.deviceResultPointer->begin() + rootResult.beginOffset + rootResult.numItems,
-                 hostResultBuffer->begin() + rootResult.beginOffset);
-
-    size_t iterIndex = 0;
-    for(DeviceVector_t::const_iterator iter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset;
-        iter != rootResult.deviceResultPointer->begin() + rootResult.beginOffset + rootResult.numItems; ++iter){
-
-        Doc curDocVal((*hostResultBuffer)[rootResult.beginOffset + iterIndex]);
-        result.push_back(curDocVal);
-
-        DeviceVector_t::iterator destIter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset + numFound + rootResult.numItems;
-        lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
-                                   destIter,
-                                   FetchDescendentTupleIfSelected(thrust::raw_pointer_cast(&(*iter))));
-        size_t mostRecentFoundCount = thrust::distance(destIter, lastIter);
-        if(!mostRecentFoundCount && the current level is not the deepest level)
-            result.remove(curDocVal)
         numFound += mostRecentFoundCount;
 
         if(mostRecentFoundCount) {

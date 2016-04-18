@@ -33,7 +33,7 @@ namespace GPUDB {
         ~GPUDBDriver();
 
         void create(const Doc & toCreate);
-        void batchCreate(const std::vector<Doc> & docs);
+        void batchCreate(std::vector<Doc> & docs);
 
         std::vector<Doc> getDocumentsForFilterSet(const FilterSet& filters);
         void update(const CoreTupleType &searchFilter, const CoreTupleType &updates);
@@ -48,13 +48,14 @@ namespace GPUDB {
 
     private:
         void create(const CoreTupleType &object);
+
         void optimizedSearchEntries(const FilterGroup & filterGroup, const unsigned long int layer);
         void searchEntries(const FilterGroup & filter, DeviceVector_t * resultsFromThisStage,
                             DeviceVector_t * resultsFromLastStage,
                            const size_t numToSearch,
                            size_t &numFound);
-        QueryResult getRootsForFilterSet(const FilterSet& filters);
-        void optimizedGetRootsForFilterSet(const FilterSet & filters);
+
+        QueryResult optimizedGetRootsForFilterSet(const FilterSet & filters);
 
         void getEntriesForRoots(const QueryResult & rootResult, std::vector<Doc> & result);
         std::vector<Doc> getEntriesForRoots(const QueryResult & rootResults);
@@ -63,7 +64,6 @@ namespace GPUDB {
         DeviceVector_t deviceEntries;
 
         DeviceVector_t * deviceIntermediateBuffer1;
-        DeviceVector_t * deviceIntermediateBuffer2;
         HostVector_t * hostResultBuffer;
     };
 }

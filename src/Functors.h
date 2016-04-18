@@ -99,6 +99,18 @@ namespace GPUDB{
         unsigned long int _layer;
     };
 
+    struct IsTupleSelectedAndPartialMatched : thrust::unary_function<CoreTupleType, bool>{
+        inline IsTupleSelectedAndPartialMatched(const CoreTupleType & expected):_expected(expected){}
+
+        __device__ __host__
+        inline bool operator()(const CoreTupleType & val)const{
+            return val.selected && val == _expected;
+        }
+
+    private:
+        const CoreTupleType _expected;
+    };
+
     struct EntryLessThan : thrust::unary_function<CoreTupleType, bool>{
         inline EntryLessThan(const CoreTupleType & filter):_filter(filter){}
 
@@ -179,19 +191,6 @@ namespace GPUDB{
         __device__ __host__
         inline bool operator()(const CoreTupleType & ival)const{
             return ival.parentID == _desiredParentID->id && ival.parentID!=0;
-        }
-
-    private:
-        const CoreTupleType * _desiredParentID;
-    };
-
-    struct FetchDescendentTupleIfSelected : thrust::unary_function<CoreTupleType, bool>{
-        inline FetchDescendentTupleIfSelected(const CoreTupleType * desiredParentID):
-                _desiredParentID(desiredParentID){}
-
-        __device__ __host__
-        inline bool operator()(const CoreTupleType & ival)const{
-            return ival.selected && ival.parentID == _desiredParentID->id && ival.parentID!=0;
         }
 
     private:
