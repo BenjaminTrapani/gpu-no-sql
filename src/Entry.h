@@ -14,7 +14,6 @@ namespace GPUDB {
         GPUDB_STR,
         GPUDB_BGV,
         GPUDB_DOC,
-        GPUDB_ADC,
         GPUDB_ANY
     };
 

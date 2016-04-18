@@ -183,18 +183,13 @@ std::vector<Doc> GPUDBDriver::getEntriesForRoots(const InternalResult & rootResu
     return result;
 }
 
-std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters, const FilterSet & sourceFilters) {
+std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters, const std::vector<FilterGroup> projectionFilters) {
     InternalResult rootResult = getRootsForFilterSet(filters);
 
     if (rootResult.numItems)
         return getEntriesForRoots(rootResult);
 
     return std::vector<Doc>(0);
-}
-
-// TODO stub
-unsigned long long int GPUDBDriver::getDocumentID(const FilterSet & sourceFilters) {
-    return 0; // TODO
 }
 
 // *************************************************************************************//

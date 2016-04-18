@@ -2,6 +2,9 @@
 // Headers for the user level API
 //
 
+// TODO
+// Comparators
+
 #ifndef GPU_NO_SQL_GPUDB_API_H
 #define GPU_NO_SQL_GPUDB_API_H
 
