@@ -254,7 +254,7 @@ int main(int argc, char * argv[]){
     GPUDBDriver driver;
     printf("sizeof entry = %i\n", sizeof(Entry));
     Doc coreDoc;
-    for(unsigned int i = 0; i < driver.getTableSize()-4; i++){
+    for(unsigned int i = 0; i < driver.getTableSize()-3; i++){
         Entry anEntry;
         anEntry.data.bigVal=0;
         anEntry.valType = GPUDB_BGV;
