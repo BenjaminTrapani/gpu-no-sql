@@ -19,16 +19,16 @@ public:
     int getRootDoc();
     int getDoc(std::vector<std::string> strings);
 
-    // Filter Creation
-    int newFilter(int docID);
-    int addToFilter(int filterID, std::vector<std::string> keys);
-    int addToFilter(int filterID, std::vector<std::string> keys, std::string & value, GPUDB_COMP comp);
-
     // Creation
     int newDoc(int docID, std::string key);
     int addToDoc(int docID, std::string & key, std::string & value, GPUDB_Type type);
     int batchAdd(int docID, std::vector<std::string> & keys, std::vector<std::string> & values, GPUDB_Type type);
     bool commitDocTree(int docID);
+
+    // Filter Creation
+    int newFilter(int docID);
+    int addToFilter(int filterID, std::vector<std::string> keys);
+    int addToFilter(int filterID, std::vector<std::string> keys, std::string & value, GPUDB_COMP comp);
 
     // Querying
     GPUDB_QueryResult query(int filterID);
