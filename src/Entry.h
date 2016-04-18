@@ -25,11 +25,11 @@ namespace GPUDB {
 // Entry Related Structures
 
     typedef struct Entry {
+        unsigned long long int parentID;
         unsigned long long int id;
         long long int key;
         GPUDB_Type valType;
         GPUDB_Data data;
-        unsigned long long int parentID;
 
         // Zero's memory
         Entry() : id(0), key(0), valType(GPUDB_INT), parentID(0) {

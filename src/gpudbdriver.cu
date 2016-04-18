@@ -74,6 +74,12 @@ void GPUDBDriver::batchCreate(const std::vector<Doc> & docs) {
     }
 }
 
+void GPUDBDriver::createEntries(const std::vector<Entry> entries) {
+    for (std::vector<Entry>::const_iterator iter = toCreate.begin(); it != v.end(); ++iter) {
+        create(*iter);
+    }
+}
+
 void GPUDBDriver::update(const Entry & searchFilter, const Entry & updates) {
     thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), ModifyEntry(updates),
                          IsFullEntryMatch(searchFilter));
@@ -184,6 +190,11 @@ std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters
         return getEntriesForRoots(rootResult);
 
     return std::vector<Doc>(0);
+}
+
+// TODO stub
+unsigned long long int GPUDBDriver::getDocumentID(const FilterSet & sourceFilters) {
+    return 0; // TODO
 }
 
 // *************************************************************************************//
