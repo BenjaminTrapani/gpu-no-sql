@@ -33,6 +33,8 @@ namespace GPUDB {
         ~GPUDBDriver();
 
         void create(const Doc & toCreate);
+        void syncCreates();
+
         void batchCreate(std::vector<Doc> & docs);
 
         std::vector<Doc> getDocumentsForFilterSet(const FilterSet& filters);
@@ -65,6 +67,7 @@ namespace GPUDB {
 
         DeviceVector_t * deviceIntermediateBuffer1;
         HostVector_t * hostResultBuffer;
+        HostVector_t * hostCreateBuffer;
     };
 }
 
