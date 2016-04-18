@@ -28,6 +28,7 @@ public:
     int newDoc(int docID, std::string key);
     int addToDoc(int docID, std::string & key, std::string & value, GPUDB_Type type);
     int batchAdd(int docID, std::vector<std::string> & keys, std::vector<std::string> & values, GPUDB_Type type);
+    bool commitDocTree(int docID);
 
     // Querying
     GPUDB_QueryResult query(int filterID);
