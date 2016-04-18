@@ -59,22 +59,6 @@ namespace GPUDB{
         const CoreTupleType * _validIndex;
     };
 
-    struct IsPartialTupleMatchAndChildSelected : thrust::unary_function<CoreTupleType, bool>{
-        inline IsPartialTupleMatchAndChildSelected(const CoreTupleType & filter, const CoreTupleType * data,
-        const size_t dataLen)
-                :_filter(filter), _data(data), _dataLen(dataLen){}
-
-        __device__ __host__
-        inline bool operator()(const CoreTupleType & val)const{
-            return val == _filter; //&& thrust::find_if(_data, _data + _dataLen, IsSelectedWithParentID(val.id));
-        }
-
-    private:
-        CoreTupleType _filter;
-        const CoreTupleType * _data;
-        const size_t _dataLen;
-    };
-
     struct IsLayerNotEqualTo : thrust::unary_function<CoreTupleType, bool>{
         inline IsLayerNotEqualTo(const unsigned long int layer):_layer(layer){}
 
