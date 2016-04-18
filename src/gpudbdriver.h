@@ -57,6 +57,7 @@ namespace GPUDB {
 
         // TODO
         // return the id of the given filters applied in top down order, matching the key as in Additional Functionality 2
+        // should error on any filters that do not fit the style
         unsigned long long int getDocumentID(const FilterSet & sourceFilters);
 
         // TODO
