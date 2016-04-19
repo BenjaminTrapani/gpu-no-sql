@@ -31,10 +31,14 @@ namespace GPUDB {
         ~GPUDBDriver();
 
         void create(const Doc & toCreate);
-        void syncCreates();
+        void createSync(const Doc & toCreate);
+
+        void create(const Entry &object);
+        void createEntries(const std::vector<Entry> entries);
 
         void batchCreate(std::vector<Doc> & docs);
-        void createEntries(const std::vector<Entry> entries);
+
+        void syncCreates();
 
         // TODO
         // needed functionality:
@@ -81,7 +85,6 @@ namespace GPUDB {
         HostVector_t * hostResultBuffer;
         HostVector_t * hostCreateBuffer;
 
-        void create(const Entry &object);
         void optimizedSearchEntries(const FilterGroup & filterGroup, const unsigned long int layer);
 
         void searchEntries(const FilterGroup & filter, DeviceVector_t * resultsFromThisStage,

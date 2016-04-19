@@ -71,7 +71,7 @@ namespace GPUDB {
     };
 
     struct IsEntrySelected : thrust::unary_function<Entry, bool> {
-        inline IsTupleSelected(const unsigned long int layer):_layer(layer){}
+        inline IsEntrySelected(const unsigned long int layer):_layer(layer) {}
 
         __device__ __host__
         inline bool operator()(const Entry & val) const {
@@ -94,19 +94,19 @@ namespace GPUDB {
         const Entry _expected;
     };
 
-    struct EntryLessThan : thrust::unary_function<CoreTupleType, bool> {
-        inline EntryLessThan(const CoreTupleType & filter):_filter(filter){}
+    struct EntryLessThan : thrust::unary_function<Entry, bool> {
+        inline EntryLessThan(const Entry & filter):_filter(filter){}
 
         __device__ __host__
-        inline bool operator()(const CoreTupleType & val) const {
+        inline bool operator()(const Entry & val) const {
             return val.key == _filter.key && val.valType == _filter.valType && val.data.bigVal < _filter.data.bigVal;
         }
 
         private:
-            CoreTupleType _filter;
+            Entry _filter;
     };
 
-    struct ExtractParentID : thrust::unary_function<CoreTupleType, GPUSizeType>{
+    struct ExtractParentID : thrust::unary_function<Entry, GPUSizeType>{
         __device__ __host__
         inline GPUSizeType operator() (const Entry & val) const {
             return val.parentID;
@@ -128,7 +128,7 @@ namespace GPUDB {
     };
 
     struct SelectEntry : thrust::unary_function<Entry, Entry> {
-        inline SelectEntry(unsigned long int layer):_layer(layer) {}
+        inline SelectEntry(unsigned long int layer):_layer(layer){}
 
         __device__ __host__
         inline Entry operator() (const Entry & val) const {

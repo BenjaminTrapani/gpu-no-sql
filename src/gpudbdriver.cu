@@ -63,22 +63,6 @@ GPUDBDriver::~GPUDBDriver() {
     hostCreateBuffer = 0;
 }
 
-void GPUDBDriver::create(const Entry &object){
-    hostCreateBuffer->push_back(object);
-    //deviceEntries.push_back(object);
-}
-
-void GPUDBDriver::syncCreates() {
-    DeviceVector_t::iterator oldEnd = deviceEntries.end();
-    deviceEntries.resize(deviceEntries.size() + hostCreateBuffer->size());
-    thrust::copy(hostCreateBuffer->begin(), hostCreateBuffer->end(), oldEnd);
-    hostCreateBuffer->clear();
-}
-
-void GPUDBDriver::create(const Entry & object) {
-    deviceEntries.push_back(object);
-}
-
 void GPUDBDriver::create(const Doc & toCreate) {
     create(toCreate.kvPair);
     for (std::vector<Doc>::const_iterator iter = toCreate.children.begin(); iter != toCreate.children.end(); ++iter) {
@@ -86,16 +70,38 @@ void GPUDBDriver::create(const Doc & toCreate) {
     }
 }
 
+void GPUDBDriver::createSync(const Doc & toCreate) {
+    create(toCreate.kvPair);
+    for (std::vector<Doc>::const_iterator iter = toCreate.children.begin(); iter != toCreate.children.end(); ++iter) {
+        create(*iter);
+    }
+    syncCreates();
+}
+
 void GPUDBDriver::batchCreate(std::vector<Doc> & docs) {
     for (std::vector<Doc>::iterator iter = docs.begin(); iter != docs.end(); ++iter){
         create(*iter);
     }
+    syncCreates();
+}
+
+void GPUDBDriver::create(const Entry &object){
+    hostCreateBuffer->push_back(object);
+    //deviceEntries.push_back(object);
 }
 
 void GPUDBDriver::createEntries(const std::vector<Entry> entries) {
     for (std::vector<Entry>::const_iterator iter = entries.begin(); iter != entries.end(); ++iter) {
         create(*iter);
     }
+    syncCreates();
+}
+
+void GPUDBDriver::syncCreates() {
+    DeviceVector_t::iterator oldEnd = deviceEntries.end();
+    deviceEntries.resize(deviceEntries.size() + hostCreateBuffer->size());
+    thrust::copy(hostCreateBuffer->begin(), hostCreateBuffer->end(), oldEnd);
+    hostCreateBuffer->clear();
 }
 
 void GPUDBDriver::update(const Entry & searchFilter, const Entry & updates) {
@@ -108,19 +114,15 @@ void GPUDBDriver::deleteBy(const Entry & searchFilter) {
 }
 
 
-void GPUDBDriver::optimizedSearchEntries(const FilterGroup & filterGroup, const unsigned long int layer){
-    for(FilterGroup::const_iterator filterIter = filterGroup.begin(); filterIter != filterGroup.end();
-        ++filterIter){
+void GPUDBDriver::optimizedSearchEntries(const FilterGroup & filterGroup, const unsigned long int layer) {
+    for (FilterGroup::const_iterator filterIter = filterGroup.begin(); filterIter != filterGroup.end(); ++filterIter) {
         DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
                                                             IsEntrySelected(layer));
-        while(lastIter != deviceEntries.end()){
-            thrust::transform_if(deviceEntries.begin(), deviceEntries.end(),
-                                 deviceEntry(layer+1),
-                                 FetchEntryWithParentID(*filterIter,
-                                                    thrust::raw_pointer_cast(&(*lastIter))));
+        while (lastIter != deviceEntries.end()) {
+            thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), SelectEntry(layer+1),
+                                 FetchEntryWithParentID(*filterIter, thrust::raw_pointer_cast(&(*lastIter))));
 
-            lastIter = thrust::find_if(lastIter+1, deviceEntries.end(),
-                                       IsEntrySelected(layer));
+            lastIter = thrust::find_if(lastIter+1, deviceEntries.end(), IsEntrySelected(layer));
         }
     }
 }
@@ -132,6 +134,7 @@ InternalResult GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filt
         thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), SelectEntry(1),
                              IsPartialEntryMatch(*firstGroupIter));
     }
+
     unsigned long int layer = 1;
     for (FilterSet::const_iterator iter = filters.begin()+1; iter != filters.end(); ++iter) {
         optimizedSearchEntries(*iter, layer);
@@ -139,7 +142,7 @@ InternalResult GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filt
     }
 
     DeviceVector_t::iterator lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(),
-                                                    deviceIntermediateBuffer1->begin(), IsTupleSelected(layer));
+                                                    deviceIntermediateBuffer1->begin(), IsEntrySelected(layer));
 
     InternalResult result;
     result.numItems = thrust::distance(deviceIntermediateBuffer1->begin(), lastIter);
@@ -156,7 +159,7 @@ void GPUDBDriver::getEntriesForRoots(const InternalResult & rootResult, std::vec
                  hostResultBuffer->begin() + rootResult.beginOffset);
 
     size_t iterIndex = 0;
-    for(DeviceVector_t::const_iterator iter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset;
+    for (DeviceVector_t::const_iterator iter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset;
         iter != rootResult.deviceResultPointer->begin() + rootResult.beginOffset + rootResult.numItems; ++iter) {
 
         Doc curDocVal((*hostResultBuffer)[rootResult.beginOffset + iterIndex]);
@@ -189,7 +192,8 @@ std::vector<Doc> GPUDBDriver::getEntriesForRoots(const InternalResult & rootResu
     return result;
 }
 
-std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters) {
+// TODO new API Change, second argument currently ignored
+std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters, const FilterSet & sourceFilters) {
     clock_t t1, t2;
     t1 = clock();
     InternalResult rootResult = optimizedGetRootsForFilterSet(filters);
