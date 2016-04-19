@@ -43,7 +43,6 @@ GPUDBDriver::GPUDBDriver() {
     deviceEntries.reserve(numEntries);
 
     deviceIntermediateBuffer1 = new DeviceVector_t(numEntries);
-    //deviceIntermediateBuffer2 = new DeviceVector_t(numEntries);
     hostResultBuffer = new HostVector_t(numEntries);
     hostCreateBuffer = new HostVector_t();
     hostCreateBuffer->reserve(numEntries);
@@ -52,9 +51,6 @@ GPUDBDriver::GPUDBDriver() {
 GPUDBDriver::~GPUDBDriver() {
     delete deviceIntermediateBuffer1;
     deviceIntermediateBuffer1=0;
-
-    //delete deviceIntermediateBuffer2;
-    //deviceIntermediateBuffer2=0;
 
     delete hostResultBuffer;
     hostResultBuffer=0;
