@@ -42,11 +42,12 @@ namespace GPUDB {
 
         // TODO
         // needed functionality:
+        // Search Top Down including the place of the first resultMember flag as the result
         // 1. Run the original filters to get the roots
         // 2. call getDocumentID with sourceFilters
         // 3. Remove all roots that do not match this parent ID - GPU Operation?
         // 4. Run get roots procedure as normal and return result
-        std::vector<Doc> getDocumentsForFilterSet(const FilterSet & filters, const FilterSet & sourceFilters);
+        std::vector<Doc> getDocumentsForFilterSet(const FilterSet & filters);
 
         void update(const Entry & searchFilter, const Entry &updates);
 

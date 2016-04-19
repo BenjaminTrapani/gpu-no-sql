@@ -8,7 +8,12 @@
 #include "Entry.h"
 
 namespace GPUDB {
-    typedef std::vector<Entry> FilterGroup;
+    typedef class FilterGroup {
+    public:
+        std::vector<Entry> group;
+        bool resultMember;
+    };
+
     typedef std::vector<FilterGroup> FilterSet;
 }
 
