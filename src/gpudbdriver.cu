@@ -145,24 +145,25 @@ void GPUDBDriver::getEntriesForRoots(const QueryResult & rootResult, std::vector
 
     size_t iterIndex = 0;
     for(DeviceVector_t::const_iterator iter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset;
-        iter != rootResult.deviceResultPointer->begin() + rootResult.beginOffset + rootResult.numItems; ++iter){
+        iter != rootResult.deviceResultPointer->begin() + rootResult.beginOffset + rootResult.numItems; ++iter) {
 
         Doc curDocVal((*hostResultBuffer)[rootResult.beginOffset + iterIndex]);
         result.push_back(curDocVal);
 
-        DeviceVector_t::iterator destIter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset + numFound + rootResult.numItems;
+        DeviceVector_t::iterator destIter =
+                rootResult.deviceResultPointer->begin() + rootResult.beginOffset + numFound + rootResult.numItems;
         lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
                                    destIter,
                                    FetchDescendentTuple(thrust::raw_pointer_cast(&(*iter))));
         size_t mostRecentFoundCount = thrust::distance(destIter, lastIter);
         numFound += mostRecentFoundCount;
 
-        if(mostRecentFoundCount) {
+        if (mostRecentFoundCount) {
             QueryResult newQuery;
             newQuery.deviceResultPointer = rootResult.deviceResultPointer;
             newQuery.beginOffset = rootResult.beginOffset + numFound;
             newQuery.numItems = mostRecentFoundCount;
-            getEntriesForRoots(newQuery, result[result.size()-1].children);
+            getEntriesForRoots(newQuery, result[result.size() - 1].children);
         }
 
         iterIndex++;
