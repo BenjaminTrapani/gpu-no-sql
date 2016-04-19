@@ -4,8 +4,10 @@ LIBS = cuda
 
 INCLUDE_DIRS=-I../deps/thrust/thrust/ -I../deps/cub/ -I.
 
+GPUDBLIB_PATH=/home/gpu/gpudb/gpu-no-sql/src/
+
 gpudb:
-	$(NVCC) -g gpudbdriver.cu --disable-warnings -l $(LIBS) -o $@ $(INCLUDE_DIRS)
+	$(NVCC) -g gpudbdriver.cu gpudbdrivertest.cpp --disable-warnings -l $(LIBS) -o $@ $(INCLUDE_DIRS)
 
 clean:
 	rm -rf gpudb
@@ -13,8 +15,8 @@ clean:
 check: gpudb
 	./gpudb
 
-topapi: gpudb
-	gcc -g gpudb-api.cpp -o GPUDB
+topapi:
+	$(NVCC) -g gpudbdriver.cu gpudb-api.cpp --disable-warnings -l $(LIBS) -o $@ $(INCLUDE_DIRS)
 
 topcheck: topapi
-	./GPUDB
+	./topapi

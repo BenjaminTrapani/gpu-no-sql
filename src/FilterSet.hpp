@@ -10,6 +10,7 @@
 namespace GPUDB {
     typedef class FilterGroup {
     public:
+        typedef std::vector<Entry>::const_iterator const_iterator;
         std::vector<Entry> group;
         bool resultMember;
     };
