@@ -17,21 +17,29 @@ namespace GPUDB {
         GPUDB_ANY
     };
 
-    typedef struct Data {
+    union GPUDB_Data {
+        bool b;
+        int n;
+        float f;
+        char c;
+        long long int s;
         long long int bigVal;
-    } GPUDB_Data;
+    };
 
 // Entry Related Structures
 
     typedef struct Entry {
-        unsigned long long int parentID;
+
         unsigned long long int id;
+        unsigned long long int parentID;
+
         long long int key;
+
         GPUDB_Type valType;
         GPUDB_Data data;
 
         // Zero's memory
-        Entry() : id(0), key(0), valType(GPUDB_INT), parentID(0) {
+        Entry() : id(0), key(0), valType(GPUDB_BGV), parentID(0) {
             data.bigVal = 0;
         }
 
@@ -47,7 +55,6 @@ namespace GPUDB {
             return other.id == id && other.key == key && other.valType == valType && other.data.bigVal == data.bigVal &&
                    other.parentID == parentID;
         }
-
 
     } GPUDB_Entry;
 

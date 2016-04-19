@@ -41,7 +41,7 @@ namespace GPUDB {
         // 2. call getDocumentID with sourceFilters
         // 3. Remove all roots that do not match this parent ID - GPU Operation?
         // 4. Run get roots procedure as normal and return result
-        std::vector<Doc> getDocumentsForFilterSet(const FilterSet & filters, const std::vector<FilterGroup> projectionFilters);
+        std::vector<Doc> getDocumentsForFilterSet(const FilterSet & filters, const FilterSet & sourceFilters);
 
         void update(const Entry & searchFilter, const Entry &updates);
 
@@ -58,8 +58,7 @@ namespace GPUDB {
         // TODO
         // return the id of the given filters applied in top down order, matching the key as in Additional Functionality 2
         // should error on any filters that do not fit the style
-        //unsigned long long int getDocumentID(const FilterSet & sourceFilters);
-        // dpne vis getDocumentsForFilterSet
+        unsigned long long int getDocumentID(const FilterSet & sourceFilters);
 
 
         // TODO
@@ -68,13 +67,10 @@ namespace GPUDB {
         // Note: Doc's will be stored with its given key in key and a special value in value that is unique
         // to Doc's - if the key matches, the value will as well. The type will be GPUDB_DOC
 
-        // 1.
         // Make a way to match the key but not the value
         // Needed For: to do filters by key X when value doesn't matter, and getDocumentsForFilterSet Changes
         // Also needed for getDocumentID
         // Suggested Solution: When GPUDB_Type in a filter = GPUDB_ANY, do this
-
-
 
     private:
         size_t numEntries;

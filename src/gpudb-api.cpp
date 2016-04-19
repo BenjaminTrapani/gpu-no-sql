@@ -37,8 +37,8 @@ int GPU_NOSQL_DB::batchAdd(int docID, std::vector<std::string> & keys, std::vect
     return -1;
 }
 
-bool GPU_NOSQL_DB::commitDocTree(int docID) {
-    return false;
+int GPU_NOSQL_DB::commitDocTree(int docID) {
+    return -1;
 }
 
 // ********************************************************************************

@@ -75,7 +75,7 @@ void GPUDBDriver::batchCreate(const std::vector<Doc> & docs) {
 }
 
 void GPUDBDriver::createEntries(const std::vector<Entry> entries) {
-    for (std::vector<Entry>::const_iterator iter = toCreate.begin(); it != v.end(); ++iter) {
+    for (std::vector<Entry>::const_iterator iter = entries.begin(); iter != entries.end(); ++iter) {
         create(*iter);
     }
 }
@@ -183,13 +183,18 @@ std::vector<Doc> GPUDBDriver::getEntriesForRoots(const InternalResult & rootResu
     return result;
 }
 
-std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters, const std::vector<FilterGroup> projectionFilters) {
+std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters, const FilterSet & sourceFilters) {
     InternalResult rootResult = getRootsForFilterSet(filters);
 
     if (rootResult.numItems)
         return getEntriesForRoots(rootResult);
 
     return std::vector<Doc>(0);
+}
+
+// TODO stub
+unsigned long long int GPUDBDriver::getDocumentID(const FilterSet & sourceFilters) {
+    return 0; // TODO
 }
 
 // *************************************************************************************//
