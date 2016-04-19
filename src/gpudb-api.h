@@ -22,6 +22,7 @@ public:
     int getRootDoc();
     int getDoc(std::vector<std::string> strings);
 
+
     // Creation
     // Returns the new Doc ID
     int newDoc(int docID, std::string key);
