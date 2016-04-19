@@ -38,8 +38,12 @@ namespace GPUDB {
         GPUDB_Type valType;
         GPUDB_Data data;
 
+        // runtime data used in searches
+        bool selected;
+        unsigned long int layer;
+
         // Zero's memory
-        Entry() : id(0), key(0), valType(GPUDB_BGV), parentID(0) {
+        Entry() : id(0), key(0), valType(GPUDB_INT), parentID(0), selected(false), layer(0) {
             data.bigVal = 0;
         }
 

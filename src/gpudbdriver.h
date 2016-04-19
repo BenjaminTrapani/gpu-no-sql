@@ -22,7 +22,7 @@ namespace GPUDB {
         size_t numItems;
         size_t beginOffset;
 
-        InternalResult():deviceResultPointer(0), numItems(0), beginOffset(0){}
+        InternalResult():deviceResultPointer(0), numItems(0), beginOffset(0) {}
     };
 
     class GPUDBDriver {
@@ -31,8 +31,9 @@ namespace GPUDB {
         ~GPUDBDriver();
 
         void create(const Doc & toCreate);
-        void batchCreate(const std::vector<Doc> & docs);
-        // Added for adding entries to docs - works in tandem with getDocumentID()
+        void syncCreates();
+
+        void batchCreate(std::vector<Doc> & docs);
         void createEntries(const std::vector<Entry> entries);
 
         // TODO
@@ -75,14 +76,18 @@ namespace GPUDB {
     private:
         size_t numEntries;
         DeviceVector_t deviceEntries;
+
         DeviceVector_t * deviceIntermediateBuffer1;
-        DeviceVector_t * deviceIntermediateBuffer2;
         HostVector_t * hostResultBuffer;
+        HostVector_t * hostCreateBuffer;
 
         void create(const Entry &object);
+        void optimizedSearchEntries(const FilterGroup & filterGroup, const unsigned long int layer);
+
         void searchEntries(const FilterGroup & filter, DeviceVector_t * resultsFromThisStage,
-                            DeviceVector_t * resultsFromLastStage, const size_t numToSearch, size_t & numFound);
-        InternalResult getRootsForFilterSet(const FilterSet & filters);
+                           DeviceVector_t * resultsFromLastStage, const size_t numToSearch, size_t &numFound);
+
+        InternalResult optimizedGetRootsForFilterSet(const FilterSet & filters);
         void getEntriesForRoots(const InternalResult & rootResult, std::vector<Doc> & result);
         std::vector<Doc> getEntriesForRoots(const InternalResult & rootResults);
 
