@@ -119,7 +119,7 @@ void GPUDBDriver::optimizedSearchEntries(const FilterGroup & filterGroup, const 
         DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
                                                             IsEntrySelected(layer));
         while (lastIter != deviceEntries.end()) {
-            thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), SelectEntry(layer+1),
+            thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), SelectEntry(layer+1),
                                  FetchEntryWithParentID(*filterIter, thrust::raw_pointer_cast(&(*lastIter))));
 
             lastIter = thrust::find_if(lastIter+1, deviceEntries.end(), IsEntrySelected(layer));

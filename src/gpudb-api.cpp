@@ -6,8 +6,7 @@
 #include "stdio.h"
 #include <cstdio>
 // TODO check formatting on this, what is needed
-//#include "gpudbdriver.cu"
-//#include "gpudbdriver.h"
+#include "gpudbdriver.h"
 
 using namespace GPUDB;
 

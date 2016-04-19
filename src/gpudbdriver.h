@@ -61,7 +61,7 @@ namespace GPUDB {
         }
 
         // TODO
-        // return the id of the given filters applied in top down order, matching the key as in Additional Functionality 2
+        // return the id of the given filters applied in top down order, matching the key and that is a doc
         // should error on any filters that do not fit the style
         unsigned long long int getDocumentID(const FilterSet & sourceFilters);
 
@@ -76,6 +76,8 @@ namespace GPUDB {
         // Needed For: to do filters by key X when value doesn't matter, and getDocumentsForFilterSet Changes
         // Also needed for getDocumentID
         // Suggested Solution: When GPUDB_Type in a filter = GPUDB_ANY, do this
+
+        // Make a comparator for value but not key
 
     private:
         size_t numEntries;
