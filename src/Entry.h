@@ -42,9 +42,11 @@ namespace GPUDB {
         // runtime data used in searches
         bool selected;
         unsigned long int layer;
+        bool isResultMember;
 
         // Zero's memory
-        Entry() : id(0), key(0), valType(GPUDB_INT), parentID(0), selected(false), layer(0) {
+        Entry() : id(0), key(0), valType(GPUDB_INT), parentID(0), selected(false), layer(0),
+                  isResultMember(false) {
             data.bigVal = 0;
         }
 

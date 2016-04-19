@@ -1,4 +1,4 @@
-NVCC = nvcc
+NVCC = nvcc -std=c++11
 
 LIBS = cuda
 

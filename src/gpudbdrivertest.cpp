@@ -45,17 +45,19 @@ void GPUDBDriverTest::runTests(){
     filter2.key=realLastEntry.parentID;
 
     FilterGroup filters1;
+    filters1.resultMember = false;
     FilterGroup filters2;
+    filters2.resultMember = true;
     filters1.group.push_back(filter1);
     filters2.group.push_back(filter2);
 
     FilterSet filterSet;
-    filterSet.push_back(filters1);
     filterSet.push_back(filters2);
+    filterSet.push_back(filters1);
 
     clock_t t1, t2;
     t1 = clock();
-    std::vector<Doc> hostqueryResult = driver.getDocumentsForFilterSet(filterSet); // TODO masking source filter addition
+    std::vector<Doc> hostqueryResult = driver.getDocumentsForFilterSet(filterSet);
     t2 = clock();
 
     float diff1 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
@@ -74,11 +76,16 @@ void GPUDBDriverTest::runTests(){
             float diff2 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
             printf("update single element latency = %fms\n", diff2);
 
-            FilterGroup filterGroup;
-            filterGroup.group.push_back(newEntry);
+            FilterGroup filterGroup1;
+            filterGroup1.group.push_back(iter->kvPair);
+            filterGroup1.resultMember = false;
+            FilterGroup filterGroup2;
+            filterGroup2.group.push_back(newEntry);
+            filterGroup2.resultMember = true;
             FilterSet toCheck;
-            toCheck.push_back(filterGroup);
-            std::vector<Doc> updatedElement = driver.getDocumentsForFilterSet(toCheck);  // TODO masking source filter addition
+            toCheck.push_back(filterGroup1);
+            toCheck.push_back(filterGroup2);
+            std::vector<Doc> updatedElement = driver.getDocumentsForFilterSet(toCheck);
             for(std::vector<Doc>::iterator updatedIter = updatedElement.begin();
                 updatedIter != updatedElement.end(); ++updatedIter){
                 printf("Updated value for id %llu = %lld\n", updatedIter->kvPair.id, updatedIter->kvPair.data.bigVal);
@@ -103,6 +110,8 @@ void GPUDBDriverTest::runTests(){
             printf("Remaining id = %llu\n", iter->kvPair.id);
         }
     }
+
+    runDeepNestingTests();
 }
 
 void GPUDBDriverTest::runDeepNestingTests(){
@@ -125,12 +134,15 @@ void GPUDBDriverTest::runDeepNestingTests(){
 
     FilterSet filterByFirstFourNest;
     filterByFirstFourNest.reserve(4);
-    for(int i = 5; i >= 3; i--){
+    for(int i = 2; i < 5; i++){
         Entry curFilter;
         curFilter.key = i;
         curFilter.valType=GPUDB_BGV;
         curFilter.data.bigVal = i;
         FilterGroup curGroup;
+        if(i==3){
+            curGroup.resultMember = true;
+        }
         curGroup.group.push_back(curFilter);
         filterByFirstFourNest.push_back(curGroup);
     }

@@ -88,13 +88,11 @@ namespace GPUDB {
         HostVector_t * hostResultBuffer;
         HostVector_t * hostCreateBuffer;
 
-        void optimizedSearchEntries(const FilterGroup & filterGroup, const unsigned long int layer);
+        void optimizedSearchEntriesDown(const FilterGroup & filterGroup, const unsigned long int layer);
 
-        void searchEntries(const FilterGroup & filter, DeviceVector_t * resultsFromThisStage,
-                           DeviceVector_t * resultsFromLastStage, const size_t numToSearch, size_t &numFound);
+        unsigned long int internalGetDocsForFilterSet(const FilterSet &filters);
+        void buildResultsBottomUp(std::vector<Doc> & result, const unsigned long int beginLayer);
 
-        InternalResult optimizedGetRootsForFilterSet(const FilterSet & filters);
-        void getEntriesForRoots(const InternalResult & rootResult, std::vector<Doc> & result);
         std::vector<Doc> getEntriesForRoots(const InternalResult & rootResults);
 
     };
