@@ -23,7 +23,7 @@ namespace GPUDB {
         int n;
         float f;
         char c;
-        long long int s;
+        char s[16];
         long long int bigVal;
     };
 
@@ -34,7 +34,7 @@ namespace GPUDB {
         unsigned long long int id;
         unsigned long long int parentID;
 
-        long long int key;
+        char key[16];
 
         GPUDB_Type valType;
         GPUDB_Data data;
