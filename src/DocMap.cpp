@@ -37,6 +37,13 @@ DocMap::DocMap(GPUDBDriver & d) {
         openSpots.push_back(i);
     }
 
+    // Set up root
+    std::vector<std::string> empty;
+    FilterSet empty;
+    docs[0] = 0;
+    paths[0] = empty;
+    filters[0] = empty;
+
     driver = driver;
 }
 
@@ -89,31 +96,20 @@ int DocMap::addDoc(std::vector <std::string> strings) {
 }
 
 unsigned long long int DocMap::getDoc(int docID) {
-    if (docID == 0) {
-        return 0;
-    }
     return docs[docID];
 }
 
 std::vector<std::string> DocMap::getPath(int docID) {
-    if (docID == 0) {
-        std::vector<std::string> empty;
-        return empty;
-    }
     return paths[docID];
 }
 
 FilterSet DocMap::getFilterSet(int docID) {
-    if (docID == 0) {
-        FilterSet empty;
-        return empty;
-    }
     return filters[docID];
 }
 
 int DocMap::removeDoc(int docID) {
     if (docID == 0) {
-        return 0;
+        return -1; // TODO error code, cannot remove root
     }
     openSpots.push_back(docID);
     // TODO better add back with random swap
