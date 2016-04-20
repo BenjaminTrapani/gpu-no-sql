@@ -33,7 +33,7 @@ private:
 DocMap::DocMap(GPUDBDriver & d) {
     // Set Up Open Docs
     openSpots.reserve(1000);
-    for (int i = 999; i > 0; i--) {
+    for (int i = 999; i > 1; i--) {
         openSpots.push_back(i);
     }
 
