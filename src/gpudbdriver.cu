@@ -67,28 +67,13 @@ void GPUDBDriver::create(const Doc & toCreate) {
     }
 }
 
-void GPUDBDriver::createSync(const Doc & toCreate) {
-    create(toCreate.kvPair);
-    for (std::vector<Doc>::const_iterator iter = toCreate.children.begin(); iter != toCreate.children.end(); ++iter) {
-        create(*iter);
-    }
-    syncCreates();
-}
-
-void GPUDBDriver::batchCreate(std::vector<Doc> & docs) {
-    for (std::vector<Doc>::iterator iter = docs.begin(); iter != docs.end(); ++iter){
-        create(*iter);
-    }
-    syncCreates();
-}
-
 void GPUDBDriver::create(const Entry &object){
     hostCreateBuffer->push_back(object);
     //deviceEntries.push_back(object);
 }
 
-void GPUDBDriver::createEntries(const std::vector<Entry> entries) {
-    for (std::vector<Entry>::const_iterator iter = entries.begin(); iter != entries.end(); ++iter) {
+void GPUDBDriver::batchCreate(std::vector<Doc> & docs) {
+    for (std::vector<Doc>::iterator iter = docs.begin(); iter != docs.end(); ++iter){
         create(*iter);
     }
     syncCreates();

@@ -33,17 +33,21 @@ public:
     // Returns an error/success code
     int addToDoc(int docID, std::string & key, std::string & value, GPUDB_Type type);
     // Returns an error/success code
-    int batchAdd(int docID, std::vector<std::string> & keys, std::vector<std::string> & values, GPUDB_Type type);
+    int batchAdd(int docID, std::vector<std::string> & keys, std::vector<std::string> & values, std::vector<GPUDB_Type> types);
     // Returns an error/success code
     int commitDocTree(int docID);
 
-    // Filter Creation
+    // Filter Creation and Editing
+
     // Returns the new filter ID on the given Doc
     int newFilter(int docID);
+    // Move the filter to the next level
+    void moveFilterLevel(int filterID);
     // Returns an error/success code
     int addToFilter(int filterID, std::vector<std::string> keys);
     // Returns an error/success code
     int addToFilter(int filterID, std::vector<std::string> keys, std::string & value, GPUDB_COMP comp);
+
 
     // Querying
     GPUDB_QueryResult query(int filterID);
@@ -62,6 +66,7 @@ private:
     GPUDBDriver driver;
     DocMap docs;
     unsigned long long int curID;
+
     void setEntryVal(Entry & entry, std::string & value, GPUDB_Type type);
     int addToDocNoSync(int docID, std::string & key, std::string & value, GPUDB_Type type);
 };
