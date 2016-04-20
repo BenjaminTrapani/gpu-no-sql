@@ -58,6 +58,33 @@ namespace GPUDB {
         const Entry * _validIndex;
     };
 
+    struct FetchEntryWithChildID : thrust::unary_function<Entry,bool> {
+        inline FetchEntryWithChildID(const Entry & filter, const Entry* validIndex):_filter(filter),
+                                                                                     _validIndex(validIndex) {
+        }
+
+        __device__ __host__
+        inline bool operator()(const Entry & ival) const {
+            return _validIndex->id == ival.parentID && ival == _filter;
+        }
+
+    private:
+        const Entry _filter;
+        const Entry * _validIndex;
+    };
+
+    struct GetElementWithChild : thrust::unary_function<Entry,bool> {
+        inline GetElementWithChild(const Entry* validIndex): _validIndex(validIndex) {}
+
+        __device__ __host__
+        inline bool operator()(const Entry & ival) const {
+            return _validIndex->parentID == ival.id;
+        }
+
+    private:
+        const Entry * _validIndex;
+    };
+
     struct IsLayerNotEqualTo : thrust::unary_function<Entry, bool> {
         inline IsLayerNotEqualTo(const unsigned long int layer):_layer(layer){}
 
@@ -128,18 +155,21 @@ namespace GPUDB {
     };
 
     struct SelectEntry : thrust::unary_function<Entry, Entry> {
-        inline SelectEntry(unsigned long int layer):_layer(layer){}
+        inline SelectEntry(unsigned long int layer, const bool isResultMember):_layer(layer),
+                                                                               _isResultMember(isResultMember){}
 
         __device__ __host__
         inline Entry operator() (const Entry & val) const {
             Entry result = val;
             result.selected = true;
             result.layer = _layer;
+            result.isResultMember = _isResultMember;
             return result;
         }
 
     private:
         const unsigned long int _layer;
+        const bool _isResultMember;
     };
 
     struct UnselectEntry : thrust::unary_function<Entry, Entry> {
@@ -147,6 +177,8 @@ namespace GPUDB {
         inline Entry operator() (const Entry & val) const {
             Entry result = val;
             result.selected = false;
+            result.layer = 0;
+            result.isResultMember = false;
             return result;
         }
     };

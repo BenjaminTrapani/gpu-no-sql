@@ -12,13 +12,16 @@
 namespace GPUDB {
     class Doc {
     public:
-        Doc(){}
-        Doc(const Entry & entry):kvPair(entry){}
+        Doc():parent(0){}
+        Doc(const Entry & entry):kvPair(entry), parent(0){}
+        Doc(const Entry & entry, Doc * iparent): kvPair(entry), parent(iparent){}
 
         Doc * addChild(const Doc & child){
             children.push_back(child);
             children.at(children.size()-1).kvPair.parentID = kvPair.id;
-            return &children[children.size()-1];
+            Doc * permResult = &children[children.size()-1];
+            permResult->parent = this;
+            return permResult;
         }
 
         std::string toString(){
@@ -34,6 +37,7 @@ namespace GPUDB {
             return sstream.str();
         }
 
+        Doc * parent;
         Entry kvPair;
         std::vector<Doc> children;
     };

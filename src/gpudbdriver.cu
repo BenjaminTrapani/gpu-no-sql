@@ -10,6 +10,7 @@
 #include "thrust/sequence.h"
 #include "thrust/transform.h"
 #include "thrust/device_ptr.h"
+#include <unordered_map>
 
 using namespace GPUDB;
 
@@ -110,265 +111,104 @@ void GPUDBDriver::deleteBy(const Entry & searchFilter) {
 }
 
 
-void GPUDBDriver::optimizedSearchEntries(const FilterGroup & filterGroup, const unsigned long int layer) {
-    for (FilterGroup::const_iterator filterIter = filterGroup.begin(); filterIter != filterGroup.end(); ++filterIter) {
+void GPUDBDriver::optimizedSearchEntriesDown(const FilterGroup & filterGroup, const unsigned long int layer) {
+    for (FilterGroup::const_iterator filterIter = filterGroup.group.begin(); filterIter != filterGroup.group.end();
+         ++filterIter) {
         DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
                                                             IsEntrySelected(layer));
         while (lastIter != deviceEntries.end()) {
-            thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), SelectEntry(layer+1),
-                                 FetchEntryWithParentID(*filterIter, thrust::raw_pointer_cast(&(*lastIter))));
+            thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                 SelectEntry(layer-1, filterGroup.resultMember),
+                                 FetchEntryWithChildID(*filterIter, thrust::raw_pointer_cast(&(*lastIter))));
 
             lastIter = thrust::find_if(lastIter+1, deviceEntries.end(), IsEntrySelected(layer));
         }
     }
 }
 
-InternalResult GPUDBDriver::optimizedGetRootsForFilterSet(const FilterSet & filters) {
+unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filters) {
     thrust::transform(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), UnselectEntry());
-
-    for (FilterGroup::const_iterator firstGroupIter = filters[0].begin(); firstGroupIter != filters[0].end(); ++firstGroupIter) {
-        thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), SelectEntry(1),
+    for (FilterGroup::const_iterator firstGroupIter = filters[0].group.begin(); firstGroupIter != filters[0].group.end();
+         ++firstGroupIter) {
+        thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                             SelectEntry(filters.size(), filters[0].resultMember),
                              IsPartialEntryMatch(*firstGroupIter));
     }
 
-    unsigned long int layer = 1;
+    unsigned long int layer = filters.size();
     for (FilterSet::const_iterator iter = filters.begin()+1; iter != filters.end(); ++iter) {
-        optimizedSearchEntries(*iter, layer);
-        layer++;
+        optimizedSearchEntriesDown(*iter, layer);
+        layer--;
     }
 
+    return layer;
+}
+
+void GPUDBDriver::buildResultsBottomUp(std::vector<Doc> & result, const unsigned long int beginLayer){
     DeviceVector_t::iterator lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(),
-                                                    deviceIntermediateBuffer1->begin(), IsEntrySelected(layer));
+                                                        deviceIntermediateBuffer1->begin(),
+                                                        IsEntrySelected(beginLayer));
 
-    InternalResult result;
-    result.numItems = thrust::distance(deviceIntermediateBuffer1->begin(), lastIter);
-    result.deviceResultPointer = deviceIntermediateBuffer1;
-    result.beginOffset = 0;
-    return result;
-}
+    std::unordered_map<unsigned long int, Doc> docIDMap;
+    for(DeviceVector_t::iterator iter = deviceIntermediateBuffer1->begin();
+            iter != lastIter; ++iter){
 
-void GPUDBDriver::getEntriesForRoots(const InternalResult & rootResult, std::vector<Doc> & result) {
-    DeviceVector_t::iterator lastIter;
-    size_t numFound = 0;
-    thrust::copy(rootResult.deviceResultPointer->begin() + rootResult.beginOffset,
-                    rootResult.deviceResultPointer->begin() + rootResult.beginOffset + rootResult.numItems,
-                 hostResultBuffer->begin() + rootResult.beginOffset);
+        DeviceVector_t::iterator childIter = iter;
+        Entry curHostChild = *childIter;
+        docIDMap[curHostChild.id] = Doc(curHostChild);
+        DeviceVector_t::iterator parentIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
+                                                              GetElementWithChild(thrust::raw_pointer_cast(&(*childIter))));
 
-    size_t iterIndex = 0;
-    for (DeviceVector_t::const_iterator iter = rootResult.deviceResultPointer->begin() + rootResult.beginOffset;
-        iter != rootResult.deviceResultPointer->begin() + rootResult.beginOffset + rootResult.numItems; ++iter) {
-
-        Doc curDocVal((*hostResultBuffer)[rootResult.beginOffset + iterIndex]);
-        result.push_back(curDocVal);
-
-        DeviceVector_t::iterator destIter =
-                rootResult.deviceResultPointer->begin() + rootResult.beginOffset + numFound + rootResult.numItems;
-        lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.begin() + deviceEntries.size(),
-                                   destIter,
-                                   FetchDescendentEntry(thrust::raw_pointer_cast(&(*iter))));
-        size_t mostRecentFoundCount = thrust::distance(destIter, lastIter);
-        numFound += mostRecentFoundCount;
-
-        if (mostRecentFoundCount) {
-            InternalResult newQuery;
-            newQuery.deviceResultPointer = rootResult.deviceResultPointer;
-            newQuery.beginOffset = rootResult.beginOffset + numFound;
-            newQuery.numItems = mostRecentFoundCount;
-            getEntriesForRoots(newQuery, result[result.size() - 1].children);
+        Doc * lastValidParent;
+        if(curHostChild.isResultMember){
+            lastValidParent = &docIDMap[curHostChild.id];
+        }else{
+            lastValidParent = 0;
         }
+        while(parentIter != deviceEntries.end()){
 
-        iterIndex++;
-    }
-}
+            Entry hostChild = *childIter;
+            Entry hostParent = *parentIter;
 
-std::vector<Doc> GPUDBDriver::getEntriesForRoots(const InternalResult & rootResult) {
-    std::vector<Doc> result;
-    getEntriesForRoots(rootResult, result);
-
-    return result;
-}
-
-// TODO new API Change, second argument currently ignored
-std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters, const FilterSet & sourceFilters) {
-    clock_t t1, t2;
-    t1 = clock();
-    InternalResult rootResult = optimizedGetRootsForFilterSet(filters);
-    t2 = clock();
-    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    //printf("get roots for filter set took %fms\n", diff);
-
-    if (rootResult.numItems)
-        return getEntriesForRoots(rootResult);
-
-    return std::vector<Doc>(0);
-}
-
-// TODO stub
-unsigned long long int GPUDBDriver::getDocumentID(const FilterSet & sourceFilters) {
-    return 0; // TODO
-}
-
-// *************************************************************************************//
-// Testing
-
-void generateNestedDoc(size_t nestings, Doc * parent, size_t beginIndex) {
-    Entry curVal;
-    curVal.key = beginIndex;
-    curVal.valType = GPUDB_BGV;
-    curVal.data.bigVal = beginIndex;
-    curVal.id = beginIndex;
-
-    Doc intermediate(curVal);
-    Doc * permIntermediate = parent->addChild(intermediate);
-
-    if(nestings>0)
-        generateNestedDoc(nestings-1, permIntermediate, beginIndex+1);
-}
-
-void runDeepNestingTests(){
-    printf("Beginning deep nesting test:\n");
-
-    GPUDBDriver driver;
-
-    for(size_t i = 2; i < driver.getTableSize(); i+=5){
-        Doc root;
-        root.kvPair.key=i;
-        root.kvPair.data.bigVal=i;
-        root.kvPair.valType=GPUDB_BGV;
-        root.kvPair.id = i;
-        root.kvPair.parentID = 0;
-        generateNestedDoc(3, &root, i+1);
-        driver.create(root);
-    }
-    driver.syncCreates();
-    printf("Database has %i entries\n", driver.getNumEntries());
-
-    FilterSet filterByFirstFourNest;
-    filterByFirstFourNest.reserve(4);
-    for(int i = 5; i >= 3; i--){
-        Entry curFilter;
-        curFilter.key = i;
-        curFilter.valType=GPUDB_BGV;
-        curFilter.data.bigVal = i;
-        FilterGroup curGroup;
-        curGroup.push_back(curFilter);
-        filterByFirstFourNest.push_back(curGroup);
-    }
-
-    clock_t t1, t2;
-
-    t1 = clock();
-    std::vector<Doc> result = driver.getDocumentsForFilterSet(filterByFirstFourNest, filterByFirstFourNest);  // TODO masking source filter addition
-    t2 = clock();
-    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("Deep filter took %fms\n", diff);
-    printf("Num results = %i\n", result.size());
-    for(std::vector<Doc>::iterator iter = result.begin(); iter != result.end(); ++iter){
-        printf(iter->toString().c_str());
-    }
-
-    printf("Deep nesting test finished.\n\n");
-}
-
-int main(int argc, char * argv[]){
-    runDeepNestingTests();
-
-    GPUDBDriver driver;
-    printf("sizeof entry = %i\n", sizeof(Entry));
-    Doc coreDoc;
-    for(unsigned int i = 0; i < driver.getTableSize()-3; i++){
-        Entry anEntry;
-        anEntry.data.bigVal=0;
-        anEntry.valType = GPUDB_BGV;
-        anEntry.key=i;
-        anEntry.id = i;
-        coreDoc.children.push_back(Doc(anEntry));
-    }
-    Entry lastEntry;
-    lastEntry.valType = GPUDB_BGV;
-    lastEntry.data.bigVal = 1;
-    lastEntry.key = 10;
-    lastEntry.parentID = 3;
-    coreDoc.children[3].children.push_back(lastEntry);
-
-    Entry realLastEntry;
-    realLastEntry.valType = GPUDB_BGV;
-    realLastEntry.id = 51;
-    realLastEntry.data.bigVal = 1;
-    realLastEntry.key = 10;
-    realLastEntry.parentID = 6;
-
-    coreDoc.children[6].children.push_back(realLastEntry);
-
-    driver.create(coreDoc);
-    driver.syncCreates();
-    printf("Database has %i entries\n", driver.getNumEntries());
-
-    Entry filter1 = realLastEntry;
-    Entry filter2;
-    filter2.data.bigVal=0;
-    filter2.valType = GPUDB_BGV;
-    filter2.key=realLastEntry.parentID;
-
-    FilterGroup filters1;
-    FilterGroup filters2;
-    filters1.push_back(filter1);
-    filters2.push_back(filter2);
-
-    FilterSet filterSet;
-    filterSet.push_back(filters1);
-    filterSet.push_back(filters2);
-
-    clock_t t1, t2;
-    t1 = clock();
-    std::vector<Doc> hostqueryResult = driver.getDocumentsForFilterSet(filterSet, filterSet); // TODO masking source filter addition
-    t2 = clock();
-
-    float diff1 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("device multi-filter query latency = %fms\n", diff1);
-
-    for(std::vector<Doc>::iterator iter = hostqueryResult.begin(); iter != hostqueryResult.end(); ++iter){
-        printf("Doc id = %llu\n", iter->kvPair.id);
-        for(std::vector<Doc>::iterator nestedIter = iter->children.begin(); nestedIter != iter->children.end();
-            ++nestedIter){
-            printf("  child id = %llu\n", nestedIter->kvPair.id);
-            Entry newEntry = nestedIter->kvPair;
-            newEntry.data.bigVal = 52;
-            t1 = clock();
-            driver.update(nestedIter->kvPair, newEntry);
-            t2 = clock();
-            float diff2 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-            printf("update single element latency = %fms\n", diff2);
-
-            FilterGroup filterGroup;
-            filterGroup.push_back(newEntry);
-            FilterSet toCheck;
-            toCheck.push_back(filterGroup);
-            std::vector<Doc> updatedElement = driver.getDocumentsForFilterSet(toCheck, toCheck);  // TODO masking source filter addition
-            for(std::vector<Doc>::iterator updatedIter = updatedElement.begin();
-                    updatedIter != updatedElement.end(); ++updatedIter){
-                printf("Updated value for id %llu = %lld\n", updatedIter->kvPair.id, updatedIter->kvPair.data.bigVal);
+            std::unordered_map<unsigned long int, Doc>::iterator keyIndex = docIDMap.find(hostParent.id);
+            if(keyIndex == docIDMap.end()){
+                docIDMap[hostParent.id] = Doc(hostParent);
             }
-        }
-    }
-    t1 = clock();
-    driver.deleteBy(lastEntry);
-    t2 = clock();
-    float deleteDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
 
-    FilterGroup searchForLastEntry;
-    searchForLastEntry.push_back(lastEntry);
-    FilterSet searchForLastEntryFilter;
-    searchForLastEntryFilter.push_back(searchForLastEntry);
-    std::vector<Doc> lastEntryResult = driver.getDocumentsForFilterSet(searchForLastEntryFilter, searchForLastEntryFilter);  // TODO masking source filter addition
-    if(lastEntryResult.size() == 0){
-        printf("Successfully deleted last entry. Delete took %fms.\n", deleteDiff);
-    }else{
-        printf("Delete of last entry failed, still present in table.\n");
-        for(std::vector<Doc>::iterator iter = lastEntryResult.begin(); iter != lastEntryResult.end(); ++iter){
-            printf("Remaining id = %llu\n", iter->kvPair.id);
+            docIDMap[hostParent.id].addChild(docIDMap[hostChild.id]);
+
+            childIter = parentIter;
+
+            if(hostParent.isResultMember){
+                lastValidParent = &docIDMap[hostParent.id];
+            }
+            parentIter = thrust::find_if(parentIter + 1, deviceEntries.end(),
+                                         GetElementWithChild(thrust::raw_pointer_cast(&(*parentIter))));
+
+        }
+        if(lastValidParent) {
+            result.push_back(*lastValidParent);
         }
     }
+}
+
+std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters) {
+    clock_t t1, t2;
+    t1 = clock();
+    unsigned long int finalLevel = internalGetDocsForFilterSet(filters);
+    t2 = clock();
+    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+
+    std::vector<Doc> result;
+    buildResultsBottomUp(result, finalLevel);
+    return result;
+}
+
+unsigned long long int GPUDBDriver::getDocumentID(const FilterSet & sourceFilters) {
+    std::vector<Doc> result = getDocumentsForFilterSet(sourceFilters);
+
+    if(result.size()==1)
+        return getDocumentsForFilterSet(sourceFilters)[0].kvPair.id;
 
     return 0;
 }
