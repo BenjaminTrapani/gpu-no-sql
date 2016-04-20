@@ -13,9 +13,7 @@ namespace GPUDB {
         GPUDB_CHAR,
         GPUDB_STR,
         GPUDB_BGV,
-        GPUDB_DOC,
-        GPUDB_ANY, // Only compare key values
-        GPUDB_VAL, // Only compare vals and val types
+        GPUDB_DOC
     };
 
     union GPUDB_Data {
