@@ -14,7 +14,7 @@
 #include "QueryResult.h"
 #include "ComparatorType.h"
 #include "gpudbdriver.h"
-#include "DocMap.cpp"
+#include "DocMap.h"
 
 using namespace GPUDB;
 
