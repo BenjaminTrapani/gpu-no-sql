@@ -89,20 +89,35 @@ int DocMap::addDoc(std::vector <std::string> strings) {
 }
 
 unsigned long long int DocMap::getDoc(int docID) {
-    return docs[i];
+    if (docID == 0) {
+        return 0;
+    }
+    return docs[docID];
 }
 
 std::vector<std::string> DocMap::getPath(int docID) {
-    return paths[i];
+    if (docID == 0) {
+        std::vector<std::string> empty;
+        return empty;
+    }
+    return paths[docID];
 }
 
-unsigned long long int DocMap::getFilterSet(int docID) {
-    return filters[i];
+FilterSet DocMap::getFilterSet(int docID) {
+    if (docID == 0) {
+        FilterSet empty;
+        return empty;
+    }
+    return filters[docID];
 }
 
 int DocMap::removeDoc(int docID) {
+    if (docID == 0) {
+        return 0;
+    }
     openSpots.push_back(docID);
     // TODO better add back with random swap
+
     return 0;
 }
 
