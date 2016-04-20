@@ -13,18 +13,23 @@
 #include "Entry.h"
 #include "QueryResult.h"
 #include "ComparatorType.h"
+#include "gpudbdriver.h"
+#include "DocMap.cpp"
 
 using namespace GPUDB;
 
 class GPU_NOSQL_DB {
 public:
+    GPU_NOSQL_DB();
+
     // Document Identification
     int getRootDoc();
     int getDoc(std::vector<std::string> strings);
+    void deleteDocRef(int docID);
 
     // Creation
     // Returns the new Doc ID
-    int newDoc(int docID, std::string key);
+    int newDoc(int docID, std::string & key);
     // Returns an error/success code
     int addToDoc(int docID, std::string & key, std::string & value, GPUDB_Type type);
     // Returns an error/success code
@@ -52,8 +57,13 @@ public:
     // Deleting
     // Returns an error/success code
     int deleteFromDoc(int filterID);
-private:
 
+private:
+    GPUDBDriver driver;
+    DocMap docs;
+    unsigned long long int curID;
+    void setEntryVal(Entry & entry, std::string & value, GPUDB_Type type);
+    int addToDocNoSync(int docID, std::string & key, std::string & value, GPUDB_Type type);
 };
 
 
