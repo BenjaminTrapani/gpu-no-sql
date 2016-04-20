@@ -31,13 +31,8 @@ namespace GPUDB {
         ~GPUDBDriver();
 
         void create(const Doc & toCreate);
-        void createSync(const Doc & toCreate);
-
         void create(const Entry &object);
-        void createEntries(const std::vector<Entry> entries);
-
         void batchCreate(std::vector<Doc> & docs);
-
         void syncCreates();
 
         // TODO

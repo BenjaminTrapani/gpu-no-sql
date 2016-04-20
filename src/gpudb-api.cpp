@@ -11,6 +11,8 @@ using namespace GPUDB;
 
 GPU_NOSQL_DB::GPU_NOSQL_DB() {
     curID = 0;
+    driver = GPUDBDriver();
+    docs = DocMap(driver);
 }
 
 // ********************************************************************************
@@ -58,7 +60,7 @@ int GPU_NOSQL_DB::newDoc(int docID, std::string key) {
     int newDocID = getDoc(newPath);
 
     // return the new doc ID
-    return newDocID; // TODO
+    return newDocID;
 }
 
 int GPU_NOSQL_DB::addToDoc(int docID, std::string & key, std::string & value, GPUDB_Type type) {
@@ -79,14 +81,17 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, std::string & val
         return -1; // TODO error code
     }
     newEntry.valType = type;
-    setEntryVal(newEntry, value, type);
+    int success = setEntryVal(newEntry, value, type);
+    if (success != 0) {
+        return -1;
+    }
 
     driver.create(newEntry);
 
     return 0;
 }
 
-void GPU_NOSQL_DB::setEntryVal(Entry & entry, std::string &value, GPUDB_Type type) {
+int GPU_NOSQL_DB::setEntryVal(Entry & entry, std::string & value, GPUDB_Type type) {
     if (type == GPUDB_BLN) {
         entry.data.b = boost::lexical_cast<bool>("1");
     } else if (type == GPUDB_INT) {
@@ -94,19 +99,37 @@ void GPU_NOSQL_DB::setEntryVal(Entry & entry, std::string &value, GPUDB_Type typ
     } else if (type == GPUDB_FLT) {
         entry.data.f = std::ftoi(value);
     } else if (type == GPUDB_CHAR) {
-        entry.data
+        char newCharS = value.c_str();
+        entry.data.c = newCharS[0];
     } else if (type == GPUDB_STR) {
-
+        if (value.length() > 15) {
+            return -1;
+        }
+        entry.data.s = value.c_str();
     } else if (type == GPUDB_BGV) {
-
+        entry.data.bigVal = std::stoll(value, value.length(), 10);
     } else {
         // this was an error
-        return;
+        return -1;
     }
+    return 0;
 }
 
-int GPU_NOSQL_DB::batchAdd(int docID, std::vector<std::string> & keys, std::vector<std::string> & values, GPUDB_Type type) {
-    return -1; // TODO
+int GPU_NOSQL_DB::batchAdd(int docID, std::vector<std::string> & keys, std::vector<std::string> & values,
+                           std::vector<GPUDB_Type> types) {
+
+    int keySize = keys.size();
+    if (keySize != values.size() && keySize != types.size()) {
+        return -1; // TODO error code
+    }
+    for (int i = 0; i < keySize; i += 1) {
+        int res = addToDocNoSync(docID, keys.at(i), values.at(i), types.at(i));
+        if (res != 0) {
+            return -i; // returns the negative of the value it fialed on - all other values are not processed
+        }
+    }
+    driver.syncCreates();
+    return 0;
 }
 
 // ********************************************************************************

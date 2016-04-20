@@ -2,14 +2,16 @@
 // TODO
 //
 
-#ifndef GPU_NO_SQL_DOCMAP_H
-#define GPU_NO_SQL_DOCMAP_H
+#include <vector>
+#include <string>
+#include "FilterSet.hpp"
+#include "gpudbdriver.h"
 
 using namespace GPUDB;
 
 class DocMap {
 public:
-    DocMap();
+    DocMap(GPUDBDriver & d);
     // Returns the external id for the given doc path
     int addDoc(std::vector<std::string> strings);
     // returns the internal val for the external doc
@@ -21,33 +23,69 @@ public:
     // Removes the external id from the mappings and returns an exit code
     int removeDoc(int docID);
 private:
+    GPUDBDriver driver;
     std::vector<int> openSpots;
     unsigned long long int docs[1000];
     FilterSet filters[1000];
     std::vector<std::string> paths[1000];
 };
 
-DocMap::DocMap() {
+DocMap::DocMap(GPUDBDriver & d) {
     // Set Up Open Docs
     openSpots.reserve(1000);
     for (int i = 999; i > 0; i--) {
         openSpots.push_back(i);
     }
+
+    driver = driver;
 }
 
 int DocMap::addDoc(std::vector <std::string> strings) {
-    if (openSpots.size != 0) {
-        // Get a place
-        int place = openSpots.back();
-        openSpots.pop_back();
-        // TODO
-        // Create filter set
-        // Add it to filter set spot
-        // get documentID and add it to doc spot
-        return 0;
-    } else {
-        return -1;
+    if (openSpots.size() == 0) {
+        return -1; // TODO error code
     }
+
+    // Get a place
+    int place = openSpots.back();
+    openSpots.pop_back();
+
+    // Create filter set
+    FilterSet filters;
+    for (int i = 0; i < strings.size(); i += 1) {
+        FilterGroup g;
+
+        // Create the entry
+        Entry newFilter;
+
+        // TODO set filter type with expansion accordingly
+
+        newFilter.valType = GPUDB_DOC;
+        if (strings.at(i).size() < 16) {
+            newFilter.key = strings.at(i).c_str();
+        } else {
+            return -1; // TODO error code
+        }
+
+        // Add the entry to the group
+        g.group.push_back(newFilter);
+
+        // If Last, Set as the result set
+        if (i == strings.size() - 1) {
+            g.resultSet = true;
+        } else {
+            g.resultSet = false;
+        }
+
+        // Add the group to the set
+        filters.push_back(g);
+    }
+
+    // Add it to filter set spot
+    docs[place] = filters;
+    // get documentID and add it to doc spot
+    docs[place] = driver.getDocumentID(filters);
+    // return the place
+    return place;
 }
 
 unsigned long long int DocMap::getDoc(int docID) {
