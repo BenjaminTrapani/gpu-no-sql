@@ -74,7 +74,7 @@ private:
 
     void setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type type);
     int addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type);
-    std::vector<Doc> flattenDoc(Doc d);
+    std::vector<Doc> flattenDoc(Doc d, bool start);
 };
 
 

@@ -178,7 +178,7 @@ int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type
     // Get Matching Docs
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(fitlerID));
     // flatten doc into single vector
-    std::vector<Entry> allEntries = flattenDoc(resultDoc);
+    std::vector<Entry> allEntries = flattenDoc(resultDoc, true);
 
     // TODO need driver changes
     // Need update list of nodes by changing values according to given Entry's val and type
@@ -200,6 +200,11 @@ int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type
     return -1; // TODO error codes for entire function
 }
 
+std::vector<Doc> GPU_NOSQL_DB::flattenDoc(Doc d, bool start) {
+    std::vector<Doc> resultDoc;
+    return resultDoc; // TODO
+}
+
 // ********************************************************************************
 // Deleting
 
@@ -207,7 +212,7 @@ int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
     // Get Matching Docs
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(fitlerID));
     // flatten doc into single vector
-    std::vector<Entry> allEntries = flattenDoc(resultDoc);
+    std::vector<Entry> allEntries = flattenDoc(resultDoc, true);
 
     // TODO need driver changes
     // implementation - delete a list of entries, not just a single entry
