@@ -30,7 +30,7 @@ public:
     // Document Identification
     int getRootDoc();
     int getDoc(std::vector<std::string> strings);
-    void deleteDocRef(int docID);
+    int deleteDocRef(int docID);
 
     // Creation
     // Returns the new Doc ID
@@ -39,19 +39,19 @@ public:
     int addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type);
     // Returns an error/success code
     int batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> types);
-    // Returns an error/success code
-    int commitDocTree(int docID);
 
     // Filter Creation and Editing
 
     // Returns the new filter ID on the given Doc
     int newFilter(int docID);
+    // Returns an error/success code
+    int addToFilter(int filterID, std::vector<std::string> key);
+    // Returns an error/success code
+    int addToFilter(int filterID, std::vector<std::string> key, GPUDB_Value & value, GPUDB_COMP comp);
     // Move the filter to the next level
-    void moveFilterLevel(int filterID);
-    // Returns an error/success code
-    int addToFilter(int filterID, std::vector<std::string> keys);
-    // Returns an error/success code
-    int addToFilter(int filterID, std::vector<std::string> keys, GPUDB_Value & value, GPUDB_COMP comp);
+    int advanceFilter(int filterID);
+    // Delete the current filter
+    int deleteFilter(int filterID);
 
 
     // Querying

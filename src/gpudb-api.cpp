@@ -28,8 +28,8 @@ int GPU_NOSQL_DB::getDoc(std::vector<std::string> strings) {
     return docs.addDoc(strings);
 }
 
-void GPU_NOSQL_DB::deleteDocRef(int docID) {
-    docs.removeDoc(docID);
+int GPU_NOSQL_DB::deleteDocRef(int docID) {
+    return docs.removeDoc(docID);
 }
 
 // ********************************************************************************
@@ -134,15 +134,31 @@ int GPU_NOSQL_DB::batchAdd(int docID, std::vector<std::string> & keys, std::vect
 // Filter Creation
 
 int GPU_NOSQL_DB::newFilter(int docID) {
-    return -1; // TODO
+    return filters.newFilter(docs.getFilterSet(docID));
 }
 
-int GPU_NOSQL_DB::addToFilter(int filterID, std::vector<std::string> keys) {
-    return -1; // TODO
+int GPU_NOSQL_DB::addToFilter(int filterID, std::vector<std::string> key) {
+    // TODO
+    // Translate key into an Entry for a search
+    Entry newEntry;
+    // Add new entry to given filter
+    return filters.addToFilter(filterID, newEntry);
 }
 
-int GPU_NOSQL_DB::addToFilter(int filterID, std::vector<std::string> keys, GPUDB_Value & value, GPUDB_COMP comp) {
-    return -1; // TODO
+int GPU_NOSQL_DB::addToFilter(int filterID, std::vector<std::string> key, GPUDB_Value & value, GPUDB_COMP comp) {
+    // TODO
+    // Translate key and value into an Entry for a search
+    Entry newEntry;
+    // Add new entry to given filter
+    return filters.addToFilter(filterID, newEntry);
+}
+
+int GPU_NOSQL_DB::advanceFilter(int filterID) {
+    return filters.advanceFilter(filterID);
+}
+
+int GPU_NOSQL_DB::deleteFilter(int filterID) {
+    return filters.removeFilter(filterID);
 }
 
 // ********************************************************************************
