@@ -5,8 +5,8 @@
 #ifndef SRC_GPUDBDRIVER_H
 #define SRC_GPUDBDRIVER_H
 
-#include "Entry.h"
-#include "Doc.h"
+#include "Entry.hpp"
+#include "Doc.hpp"
 #include "thrust/device_vector.h"
 #include "thrust/host_vector.h"
 #include "FilterSet.hpp"

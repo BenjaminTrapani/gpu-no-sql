@@ -2,8 +2,8 @@
 // Created by Benjamin Trapani on 4/19/16.
 //
 
-#include "gpudbdrivertest.h"
-#include "gpudbdriver.h"
+#include "gpudbdrivertest.hpp"
+#include "gpudbdriver.hpp"
 using namespace GPUDB;
 
 void GPUDBDriverTest::runTests(){

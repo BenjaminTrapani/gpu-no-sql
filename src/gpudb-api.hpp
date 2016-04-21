@@ -5,16 +5,21 @@
 // TODO
 // Comparators
 
+// TODO
+// Get rid of magic number size of FilterMap and DocMap using construct with size parameter
+// limit by int
+
 #ifndef GPU_NO_SQL_GPUDB_API_H
 #define GPU_NO_SQL_GPUDB_API_H
 
 #include <string>
 #include <vector>
-#include "Entry.h"
-#include "QueryResult.h"
-#include "ComparatorType.h"
-#include "gpudbdriver.h"
-#include "DocMap.h"
+#include "Entry.hpp"
+#include "QueryResult.hpp"
+#include "ComparatorType.hpp"
+#include "gpudbdriver.hpp"
+#include "DocMap.hpp"
+#include "FilterMap.hpp"
 
 using namespace GPUDB;
 
@@ -31,9 +36,9 @@ public:
     // Returns the new Doc ID
     int newDoc(int docID, std::string & key);
     // Returns an error/success code
-    int addToDoc(int docID, std::string & key, std::string & value, GPUDB_Type type);
+    int addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type);
     // Returns an error/success code
-    int batchAdd(int docID, std::vector<std::string> & keys, std::vector<std::string> & values, std::vector<GPUDB_Type> types);
+    int batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> types);
     // Returns an error/success code
     int commitDocTree(int docID);
 
@@ -46,7 +51,7 @@ public:
     // Returns an error/success code
     int addToFilter(int filterID, std::vector<std::string> keys);
     // Returns an error/success code
-    int addToFilter(int filterID, std::vector<std::string> keys, std::string & value, GPUDB_COMP comp);
+    int addToFilter(int filterID, std::vector<std::string> keys, GPUDB_Value & value, GPUDB_COMP comp);
 
 
     // Querying
@@ -54,9 +59,7 @@ public:
 
     // Updating - single filter only or error out
     // Returns an error/success code
-    int updateOnDoc(int filterID, std::string & value);
-    // Returns an error/success code
-    int updateOnDoc(int filterID, std::string & value, GPUDB_Type type);
+    int updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type);
 
     // Deleting
     // Returns an error/success code
@@ -65,10 +68,12 @@ public:
 private:
     GPUDBDriver driver;
     DocMap docs;
+    FilterMap filters;
+
     unsigned long long int curID;
 
-    void setEntryVal(Entry & entry, std::string & value, GPUDB_Type type);
-    int addToDocNoSync(int docID, std::string & key, std::string & value, GPUDB_Type type);
+    void setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type type);
+    int addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type);
 };
 
 

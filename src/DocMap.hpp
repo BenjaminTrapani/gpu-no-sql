@@ -5,11 +5,16 @@
 #ifndef GPU_NO_SQL_DOCMAP_H
 #define GPU_NO_SQL_DOCMAP_H
 
+#include <vector>
+#include <string>
+#include "FilterSet.hpp"
+#include "gpudbdriver.hpp"
+
 using namespace GPUDB;
 
 class DocMap {
 public:
-    DocMap(GPUDBDriver & d);
+    DocMap(GPUDBDriver *d);
     // Returns the external id for the given doc path
     int addDoc(std::vector<std::string> strings);
     // returns the internal val for the external doc
@@ -21,7 +26,7 @@ public:
     // Removes the external id from the mappings and returns an exit code
     int removeDoc(int docID);
 private:
-    GPUDBDriver driver; // TODO pointer
+    GPUDBDriver *driver;
 
     std::vector<int> openSpots; // TODO switch to list
 

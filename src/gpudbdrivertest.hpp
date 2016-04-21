@@ -4,7 +4,7 @@
 
 #ifndef GPU_NO_SQL_GPUDBDRIVERTEST_H
 #define GPU_NO_SQL_GPUDBDRIVERTEST_H
-#include "Doc.h"
+#include "Doc.hpp"
 
 class GPUDBDriverTest{
 public:

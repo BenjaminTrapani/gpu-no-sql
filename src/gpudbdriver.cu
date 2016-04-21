@@ -1,5 +1,5 @@
-#include "gpudbdriver.h"
-#include "Functors.h"
+#include "gpudbdriver.hpp"
+#include "Functors.hpp"
 
 #include <cuda.h>
 #include "stdio.h"

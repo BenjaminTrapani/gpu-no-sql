@@ -2,15 +2,11 @@
 // TODO
 //
 
-#include <vector>
-#include <string>
-#include "FilterSet.hpp"
-#include "gpudbdriver.h"
-#include "DocMap.h"
+#include "DocMap.hpp"
 
 using namespace GPUDB;
 
-DocMap::DocMap(GPUDBDriver & d) {
+DocMap::DocMap(GPUDBDriver *d) {
     // Set Up Open Docs
     openSpots.reserve(1000);
     for (int i = 999; i > 1; i--) {
@@ -24,7 +20,7 @@ DocMap::DocMap(GPUDBDriver & d) {
     paths[0] = empty;
     filters[0] = empty;
 
-    driver = driver;
+    driver = d;
 }
 
 int DocMap::addDoc(std::vector <std::string> strings) {
