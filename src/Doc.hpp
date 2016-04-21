@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include "Entry.h"
+#include "Entry.hpp"
 
 namespace GPUDB {
     class Doc {

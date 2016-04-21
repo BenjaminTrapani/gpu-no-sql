@@ -2,17 +2,18 @@
 // User Level API Implementation
 //
 
-#include "gpudb-api.h"
+#include "gpudb-api.hpp"
 #include "stdio.h"
 #include <cstdio>
-#include "gpudbdriver.h"
+#include "gpudbdriver.hpp"
 
 using namespace GPUDB;
 
 GPU_NOSQL_DB::GPU_NOSQL_DB() {
     curID = 0;
     driver = GPUDBDriver();
-    docs = DocMap(driver);
+    docs = DocMap(&driver);
+    filters = FilterMap(&driver, &docs);
 }
 
 // ********************************************************************************
@@ -63,13 +64,13 @@ int GPU_NOSQL_DB::newDoc(int docID, std::string key) {
     return newDocID;
 }
 
-int GPU_NOSQL_DB::addToDoc(int docID, std::string & key, std::string & value, GPUDB_Type type) {
+int GPU_NOSQL_DB::addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type) {
     int res = addtoDocNoSync(docID, key, value, type);
     driver.syncCreates();
     retun res;
 }
 
-int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, std::string & value, GPUDB_Type type) {
+int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type) {
     // Create a new Entry
     Entry newEntry;
     newEntry.id = curID;
@@ -83,7 +84,7 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, std::string & val
     newEntry.valType = type;
     int success = setEntryVal(newEntry, value, type);
     if (success != 0) {
-        return -1;
+        return -1; // TODO error code
     }
 
     driver.create(newEntry);
@@ -91,25 +92,22 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, std::string & val
     return 0;
 }
 
-int GPU_NOSQL_DB::setEntryVal(Entry & entry, std::string & value, GPUDB_Type type) {
+int GPU_NOSQL_DB::setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type type) {
+    entry.data.bigVal = 0;
     if (type == GPUDB_BLN) {
-        entry.data.b = boost::lexical_cast<bool>("1");
+        entry.data.b = value.b;
     } else if (type == GPUDB_INT) {
-        entry.data.n = std::stoi(value);
+        entry.data.n = value.n;
     } else if (type == GPUDB_FLT) {
-        entry.data.f = std::ftoi(value);
+        entry.data.f = value.f;
     } else if (type == GPUDB_CHAR) {
         char newCharS = value.c_str();
-        entry.data.c = newCharS[0];
+        entry.data.c = value.c;
     } else if (type == GPUDB_STR) {
-        if (value.length() > 15) {
-            return -1;
-        }
-        entry.data.s = value.c_str();
+        entry.data.s = value.s;
     } else if (type == GPUDB_BGV) {
-        entry.data.bigVal = std::stoll(value, value.length(), 10);
+        entry.data.bigVal = value.bigVal;
     } else {
-        // this was an error
         return -1;
     }
     return 0;
@@ -143,7 +141,7 @@ int GPU_NOSQL_DB::addToFilter(int filterID, std::vector<std::string> keys) {
     return -1; // TODO
 }
 
-int GPU_NOSQL_DB::addToFilter(int filterID, std::vector<std::string> keys, std::string & value, GPUDB_COMP comp) {
+int GPU_NOSQL_DB::addToFilter(int filterID, std::vector<std::string> keys, GPUDB_Value & value, GPUDB_COMP comp) {
     return -1; // TODO
 }
 
@@ -158,11 +156,7 @@ GPUDB_QueryResult GPU_NOSQL_DB::query(int filterID) {
 // ********************************************************************************
 // Updating - single filter only
 
-int GPU_NOSQL_DB::updateOnDoc(int filterID, std::string & value) {
-    return -1; // TODO
-}
-
-int GPU_NOSQL_DB::updateOnDoc(int filterID, std::string & value, GPUDB_Type type) {
+int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type) {
     return -1; // TODO
 }
 

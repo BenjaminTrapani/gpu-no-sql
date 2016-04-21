@@ -16,6 +16,15 @@ namespace GPUDB {
         GPUDB_DOC
     };
 
+    union GPUDB_Value {
+        bool b;
+        int n;
+        float f;
+        char c;
+        char s[16];
+        long long int bigVal;
+    };
+
     union GPUDB_Data {
         bool b;
         int n;
