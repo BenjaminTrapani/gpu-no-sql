@@ -57,7 +57,7 @@ public:
     // Querying
     GPUDB_QueryResult query(int filterID);
 
-    // Updating - single filter only or error out
+    // Updating
     // Returns an error/success code
     int updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type);
 
@@ -74,6 +74,7 @@ private:
 
     void setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type type);
     int addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type);
+    std::vector<Doc> flattenDoc(Doc d);
 };
 
 

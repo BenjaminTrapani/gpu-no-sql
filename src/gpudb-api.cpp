@@ -82,7 +82,7 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & val
         return -1; // TODO error code
     }
     newEntry.valType = type;
-    int success = setEntryVal(newEntry, value, type);
+    int success = setEntryVal(&newEntry, value, type);
     if (success != 0) {
         return -1; // TODO error code
     }
@@ -92,21 +92,20 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & val
     return 0;
 }
 
-int GPU_NOSQL_DB::setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type type) {
+int GPU_NOSQL_DB::setEntryVal(Entry *entry, GPUDB_Value & value, GPUDB_Type type) {
     entry.data.bigVal = 0;
     if (type == GPUDB_BLN) {
-        entry.data.b = value.b;
+        entry->data->b = value.b;
     } else if (type == GPUDB_INT) {
-        entry.data.n = value.n;
+        entry->data->n = value.n;
     } else if (type == GPUDB_FLT) {
-        entry.data.f = value.f;
+        entry->data->f = value.f;
     } else if (type == GPUDB_CHAR) {
-        char newCharS = value.c_str();
-        entry.data.c = value.c;
+        entry->data->c = value.c;
     } else if (type == GPUDB_STR) {
-        entry.data.s = value.s;
+        entry->data->s = value.s;
     } else if (type == GPUDB_BGV) {
-        entry.data.bigVal = value.bigVal;
+        entry->data->bigVal = value.bigVal;
     } else {
         return -1;
     }
@@ -165,22 +164,60 @@ int GPU_NOSQL_DB::deleteFilter(int filterID) {
 // Querying
 
 GPUDB_QueryResult GPU_NOSQL_DB::query(int filterID) {
+    // Get the resulting document
+    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
+    // TODO populate the user format with the result doc
     GPUDB_QueryResult r;
     return r; // TODO
 }
 
 // ********************************************************************************
-// Updating - single filter only
+// Updating
 
 int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type) {
-    return -1; // TODO
+    // Get Matching Docs
+    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(fitlerID));
+    // flatten doc into single vector
+    std::vector<Entry> allEntries = flattenDoc(resultDoc);
+
+    // TODO need driver changes
+    // Need update list of nodes by changing values according to given Entry's val and type
+    // driver.update(allEntries, newEntry);
+
+    for (std::vector<Entry>::iterator it = allEntries.begin(); it != allEntries.end(); it++) {
+        // Save the old Entry
+        Entry oldEntry = *it;
+
+        // Copy to make the new one and change accordingly
+        Entry newEntry = oldEntry;
+        newEntry.valType = type;
+        setEntryVal(newEntry, value, type);
+
+        // Call the update
+        driver.update(oldEntry, newEntry);
+    }
+
+    return -1; // TODO error codes for entire function
 }
 
 // ********************************************************************************
 // Deleting
 
 int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
-    return -1; // TODO
+    // Get Matching Docs
+    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(fitlerID));
+    // flatten doc into single vector
+    std::vector<Entry> allEntries = flattenDoc(resultDoc);
+
+    // TODO need driver changes
+    // implementation - delete a list of entries, not just a single entry
+    // goal: batch deletes, much more efficient
+    // driver.deleteAll(allEntries);
+    for (std::vector<Entry>::iterator it = allEntries.begin(); it != allEntries.end(); it++) {
+        driver.deleteAll(*it);
+    }
+
+    return -1; // TODO error codes for entire function
 }
 
 // ********************************************************************************
