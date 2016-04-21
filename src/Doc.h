@@ -39,7 +39,7 @@ namespace GPUDB {
 
         Doc * parent;
         Entry kvPair;
-        std::vector<Doc> children;
+        std::vector<Doc> children; // TODO switch to list
     };
 }
 

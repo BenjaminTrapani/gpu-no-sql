@@ -21,8 +21,10 @@ public:
     // Removes the external id from the mappings and returns an exit code
     int removeDoc(int docID);
 private:
-    GPUDBDriver driver;
-    std::vector<int> openSpots;
+    GPUDBDriver driver; // TODO pointer
+
+    std::vector<int> openSpots; // TODO switch to list
+
     unsigned long long int docs[1000];
     FilterSet filters[1000];
     std::vector<std::string> paths[1000];
