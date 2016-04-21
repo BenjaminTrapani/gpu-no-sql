@@ -2,6 +2,8 @@
 // GPUDB Driver Header (API and Helpers)
 //
 
+// TODO error codes for queries?
+
 #ifndef SRC_GPUDBDRIVER_H
 #define SRC_GPUDBDRIVER_H
 
@@ -46,7 +48,7 @@ namespace GPUDB {
 
         void update(const Entry & searchFilter, const Entry &updates);
 
-        void deleteBy(const Entry & searchFilter);
+        void deleteAll(const Entry & searchFilter);
 
         inline size_t getTableSize() const {
             return numEntries;
