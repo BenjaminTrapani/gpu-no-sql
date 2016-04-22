@@ -1,5 +1,5 @@
 //
-// TODO
+// Represents a mapping of user ID's to the information needed to locate a doc
 //
 
 #include "DocMap.hpp"

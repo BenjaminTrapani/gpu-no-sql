@@ -168,36 +168,37 @@ GPUDB_QueryResult GPU_NOSQL_DB::query(int filterID) {
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
     // TODO populate the user format with the result doc
     GPUDB_QueryResult r;
-    return r; // TODO
+    return r;
 }
 
 // ********************************************************************************
 // Updating
-
+// must give a filter that does not hit a document
 int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type) {
-    // Get Matching Docs
+    // Get Matching Entry
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(fitlerID));
-    // flatten doc into single vector
-    std::vector<Entry> allEntries = flattenDoc(resultDoc, true);
 
-    // TODO need driver changes
-    // Need update list of nodes by changing values according to given Entry's val and type
-    // driver.update(allEntries, newEntry);
-
-    for (std::vector<Entry>::iterator it = allEntries.begin(); it != allEntries.end(); it++) {
-        // Save the old Entry
-        Entry oldEntry = *it;
-
-        // Copy to make the new one and change accordingly
-        Entry newEntry = oldEntry;
-        newEntry.valType = type;
-        setEntryVal(newEntry, value, type);
-
-        // Call the update
-        driver.update(oldEntry, newEntry);
+    // Check that it is not a doc
+    Entry oldEntry = resultDoc.kvPair;
+    if (oldEntry.valType == GPUDB_DOC) {
+        return -1; // TODO error code does not hit a document
     }
 
-    return -1; // TODO error codes for entire function
+    // Create the revised entry
+    Entry revisedEntry;
+    revisedEntry.parentID = oldEntry.parentID;
+    revisedEntry.id = oldEntry.id;
+    revisedEntry.key = oldEntry.key;
+    revisedEntry.valType = type;
+    int dataSetRes = setEntryVal(&revisedEntry, value, type);
+    if (dataSetRes != 0) {
+        return -1; // TODO error code bad value
+    }
+
+    // Update the entry
+    driver.update(oldEntry, revisedEntry);
+
+    return 0; // TODO error code for success
 }
 
 std::vector<Doc> GPU_NOSQL_DB::flattenDoc(Doc d, bool start) {
@@ -228,7 +229,6 @@ int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
 // ********************************************************************************
 // Testing
 
-// TODO
 int main() {
     printf("Running main in top level API\n");
     return 0;
