@@ -34,14 +34,15 @@ namespace GPUDB {
         long long int bigVal;
     };
 
+
 // Entry Related Structures
 
     typedef struct Entry {
 
         unsigned long long int id;
         unsigned long long int parentID;
-
-        char key[16];
+        static const unsigned char KeyLen = 2;
+        long long int key[KeyLen];
 
         GPUDB_Type valType;
         GPUDB_Data data;
@@ -51,8 +52,8 @@ namespace GPUDB {
         unsigned long int layer;
         bool isResultMember;
 
-        // Zero's memory
-        Entry() : id(0), key(0), valType(GPUDB_INT), parentID(0), selected(false), layer(0),
+        // Zeros memory
+        Entry() : id(0), key({0}), valType(GPUDB_INT), parentID(0), selected(false), layer(0),
                   isResultMember(false) {
             data.bigVal = 0;
         }
@@ -62,7 +63,8 @@ namespace GPUDB {
         }
 
         inline bool operator==(const Entry &val) const {
-            return key == val.key && valType == val.valType && data.bigVal == val.data.bigVal;
+            return key[0] == val.key[0] && key[1] == val.key[1] && valType == val.valType &&
+                    data.bigVal == val.data.bigVal;
         }
 
         inline bool fullCompare(const Entry &other) const {

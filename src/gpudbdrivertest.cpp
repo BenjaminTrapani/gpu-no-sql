@@ -4,6 +4,7 @@
 
 #include "gpudbdrivertest.hpp"
 #include "gpudbdriver.hpp"
+#include "EntryUtils.h"
 using namespace GPUDB;
 
 void GPUDBDriverTest::runTests(){
@@ -14,14 +15,14 @@ void GPUDBDriverTest::runTests(){
         Entry anEntry;
         anEntry.data.bigVal=0;
         anEntry.valType = GPUDB_BGV;
-        anEntry.key=i;
+        EntryUtils::assignKeyToEntry(anEntry, i);
         anEntry.id = i;
         coreDoc.children.push_back(Doc(anEntry));
     }
     Entry lastEntry;
     lastEntry.valType = GPUDB_BGV;
     lastEntry.data.bigVal = 1;
-    lastEntry.key = 10;
+    EntryUtils::assignKeyToEntry(lastEntry, 10);
     lastEntry.parentID = 3;
     coreDoc.children[3].children.push_back(lastEntry);
 
@@ -29,7 +30,7 @@ void GPUDBDriverTest::runTests(){
     realLastEntry.valType = GPUDB_BGV;
     realLastEntry.id = 51;
     realLastEntry.data.bigVal = 1;
-    realLastEntry.key = 10;
+    EntryUtils::assignKeyToEntry(realLastEntry, 10);
     realLastEntry.parentID = 6;
 
     coreDoc.children[6].children.push_back(realLastEntry);
@@ -42,7 +43,7 @@ void GPUDBDriverTest::runTests(){
     Entry filter2;
     filter2.data.bigVal=0;
     filter2.valType = GPUDB_BGV;
-    filter2.key=realLastEntry.parentID;
+    EntryUtils::assignKeyToEntry(filter2, realLastEntry.parentID);
 
     FilterGroup filters1;
     filters1.resultMember = false;
@@ -93,7 +94,7 @@ void GPUDBDriverTest::runTests(){
         }
     }
     t1 = clock();
-    driver.deleteBy(lastEntry);
+    driver.deleteAll(lastEntry);
     t2 = clock();
     float deleteDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
 
@@ -121,7 +122,7 @@ void GPUDBDriverTest::runDeepNestingTests(){
 
     for(size_t i = 2; i < driver.getTableSize(); i+=5){
         Doc root;
-        root.kvPair.key=i;
+        EntryUtils::assignKeyToEntry(root.kvPair, i);
         root.kvPair.data.bigVal=i;
         root.kvPair.valType=GPUDB_BGV;
         root.kvPair.id = i;
@@ -136,7 +137,7 @@ void GPUDBDriverTest::runDeepNestingTests(){
     filterByFirstFourNest.reserve(4);
     for(int i = 2; i < 5; i++){
         Entry curFilter;
-        curFilter.key = i;
+        EntryUtils::assignKeyToEntry(curFilter, i);
         curFilter.valType=GPUDB_BGV;
         curFilter.data.bigVal = i;
         FilterGroup curGroup;
@@ -164,7 +165,7 @@ void GPUDBDriverTest::runDeepNestingTests(){
 
 void GPUDBDriverTest::generateNestedDoc(size_t nestings, Doc * parent, size_t beginIndex) {
     Entry curVal;
-    curVal.key = beginIndex;
+    EntryUtils::assignKeyToEntry(curVal, beginIndex);
     curVal.valType = GPUDB_BGV;
     curVal.data.bigVal = beginIndex;
     curVal.id = beginIndex;

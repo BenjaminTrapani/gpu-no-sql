@@ -36,7 +36,7 @@ GPUDBDriver::GPUDBDriver() {
     cudaDeviceProp propOfInterest;
     cudaGetDeviceProperties(&propOfInterest, 0);
     size_t memBytes = propOfInterest.totalGlobalMem;
-    size_t allocSize = memBytes*0.12f;
+    size_t allocSize = memBytes*0.08f; //0.12
     numEntries = allocSize/sizeof(Entry);
     printf("Num entries = %i\n", numEntries);
 
