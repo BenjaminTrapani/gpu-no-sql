@@ -13,29 +13,31 @@ void GPUDBDriverTest::runTests(){
     GPUDBDriver driver;
     printf("sizeof entry = %i\n", sizeof(Entry));
     Doc coreDoc;
+    Entry lastEntry;
+    Entry realLastEntry;
     for(unsigned int i = 0; i < driver.getTableSize()-3; i++){
         Entry anEntry;
         anEntry.data.bigVal=0;
         anEntry.valType = GPUDB_BGV;
         EntryUtils::assignKeyToEntry(anEntry, i);
         anEntry.id = i;
-        coreDoc.children.push_back(Doc(anEntry));
+        Doc * perm = coreDoc.addChild(anEntry);
+        if(i == 3){
+            lastEntry.valType = GPUDB_BGV;
+            lastEntry.data.bigVal = 1;
+            EntryUtils::assignKeyToEntry(lastEntry, 10);
+            lastEntry.parentID = 3;
+            perm->children.push_back(lastEntry);
+        }else if(i == 6){
+            realLastEntry.valType = GPUDB_BGV;
+            realLastEntry.id = 51;
+            realLastEntry.data.bigVal = 1;
+            EntryUtils::assignKeyToEntry(realLastEntry, 10);
+            realLastEntry.parentID = 6;
+            perm->children.push_back(realLastEntry);
+        }
     }
-    Entry lastEntry;
-    lastEntry.valType = GPUDB_BGV;
-    lastEntry.data.bigVal = 1;
-    EntryUtils::assignKeyToEntry(lastEntry, 10);
-    lastEntry.parentID = 3;
-    coreDoc.children[3].children.push_back(lastEntry);
 
-    Entry realLastEntry;
-    realLastEntry.valType = GPUDB_BGV;
-    realLastEntry.id = 51;
-    realLastEntry.data.bigVal = 1;
-    EntryUtils::assignKeyToEntry(realLastEntry, 10);
-    realLastEntry.parentID = 6;
-
-    coreDoc.children[6].children.push_back(realLastEntry);
 
     driver.create(coreDoc);
     driver.syncCreates();
@@ -70,7 +72,7 @@ void GPUDBDriverTest::runTests(){
 
     for(std::vector<Doc>::iterator iter = hostqueryResult.begin(); iter != hostqueryResult.end(); ++iter){
         printf("Doc id = %llu\n", iter->kvPair.id);
-        for(std::vector<Doc>::iterator nestedIter = iter->children.begin(); nestedIter != iter->children.end();
+        for(std::list<Doc>::iterator nestedIter = iter->children.begin(); nestedIter != iter->children.end();
             ++nestedIter){
             printf("  child id = %llu\n", nestedIter->kvPair.id);
             Entry newEntry = nestedIter->kvPair;

@@ -62,7 +62,7 @@ GPUDBDriver::~GPUDBDriver() {
 
 void GPUDBDriver::create(const Doc & toCreate) {
     create(toCreate.kvPair);
-    for (std::vector<Doc>::const_iterator iter = toCreate.children.begin(); iter != toCreate.children.end(); ++iter) {
+    for (std::list<Doc>::const_iterator iter = toCreate.children.begin(); iter != toCreate.children.end(); ++iter) {
         create(*iter);
     }
 }

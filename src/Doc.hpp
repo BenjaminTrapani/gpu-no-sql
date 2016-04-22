@@ -4,7 +4,7 @@
 
 #ifndef GPU_NO_SQL_DOC_H
 #define GPU_NO_SQL_DOC_H
-#include <vector>
+#include <list>
 #include <string>
 #include <sstream>
 #include "Entry.hpp"
@@ -18,7 +18,7 @@ namespace GPUDB {
 
         Doc * addChild(const Doc & child){
             children.push_back(child);
-            Doc * permResult = &children[children.size()-1];
+            Doc * permResult = &children.back();
             permResult->parent = this;
             permResult->kvPair.parentID = kvPair.id;
             return permResult;
@@ -30,7 +30,7 @@ namespace GPUDB {
             sstream << "  key: " << kvPair.key << std::endl;
             sstream << "  value: " << kvPair.data.bigVal << std::endl;
             sstream << "  parentid: " << kvPair.parentID << std::endl;
-            for(std::vector<Doc>::iterator iter = children.begin(); iter != children.end(); ++iter){
+            for(std::list<Doc>::iterator iter = children.begin(); iter != children.end(); ++iter){
                 sstream << "  child " << std::distance(children.begin(), iter) << std::endl;
                 sstream << iter->toString();
             }
@@ -39,7 +39,7 @@ namespace GPUDB {
 
         Doc * parent;
         Entry kvPair;
-        std::vector<Doc> children; // TODO switch to list
+        std::list<Doc> children;
     };
 }
 
