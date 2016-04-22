@@ -38,8 +38,8 @@ Sunday: Cleanup Finalizations, Powerpoint Design
 Ben:
 Friday: Driver Changes and Doc Update
 Saturday: Write Demo Tests
-Sunday: Finalize Tests, Measure Preformance
+Sunday: Finalize Tests, Measure Performance
 
 Both:
 Saturday Meeting: Run Tests, Plan
-Sunday Meeting: Review Powerpoint
+Sunday Meeting: Review Powerpoint and Finalize Presentation
