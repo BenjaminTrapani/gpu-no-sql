@@ -18,9 +18,9 @@ namespace GPUDB {
 
         Doc * addChild(const Doc & child){
             children.push_back(child);
-            children.at(children.size()-1).kvPair.parentID = kvPair.id;
             Doc * permResult = &children[children.size()-1];
             permResult->parent = this;
+            permResult->kvPair.parentID = kvPair.id;
             return permResult;
         }
 

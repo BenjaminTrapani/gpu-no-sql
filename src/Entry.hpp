@@ -58,13 +58,29 @@ namespace GPUDB {
             data.bigVal = 0;
         }
 
-        bool operator<(const Entry &val) const {
-            return true; // TODO smarter comparison
+        inline bool operator<(const Entry &val) const {
+            return key[0] == val.key[0] && key[1] == val.key[1] &&
+                    valType == val.valType && data.bigVal < val.data.bigVal;
+        }
+
+        inline bool operator<=(const Entry &val) const {
+            return key[0] == val.key[0] && key[1] == val.key[1] &&
+                   valType == val.valType && data.bigVal <= val.data.bigVal;
         }
 
         inline bool operator==(const Entry &val) const {
             return key[0] == val.key[0] && key[1] == val.key[1] && valType == val.valType &&
                     data.bigVal == val.data.bigVal;
+        }
+
+        inline bool operator>=(const Entry &val) const {
+            return key[0] == val.key[0] && key[1] == val.key[1] &&
+                   valType == val.valType && data.bigVal >= val.data.bigVal;
+        }
+
+        inline bool operator>(const Entry &val) const {
+            return key[0] == val.key[0] && key[1] == val.key[1] &&
+                   valType == val.valType && data.bigVal > val.data.bigVal;
         }
 
         inline bool fullCompare(const Entry &other) const {

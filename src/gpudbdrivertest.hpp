@@ -11,7 +11,6 @@ public:
     void runTests();
 private:
     void runDeepNestingTests();
-    void generateNestedDoc(size_t nestings, GPUDB::Doc * parent, size_t beginIndex);
 };
 
 #endif //GPU_NO_SQL_GPUDBDRIVERTEST_H

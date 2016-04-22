@@ -101,30 +101,164 @@ void GPUDBDriver::optimizedSearchEntriesDown(const FilterGroup & filterGroup, co
          ++filterIter) {
         DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
                                                             IsEntrySelected(layer));
+        //EntryComparatorUtils::EntryComparator_t curComparator = EntryComparatorUtils::getFunctorForFilter(*filterIter);
         while (lastIter != deviceEntries.end()) {
-            thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
-                                 SelectEntry(layer-1, filterGroup.resultMember),
-                                 FetchEntryWithChildID(*filterIter, thrust::raw_pointer_cast(&(*lastIter))));
+            switch (filterIter->comparator){
+                case GREATER:{
+                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                         SelectEntry(layer+1, filterGroup.resultMember),
+                                         FetchEntryWithChildID<IsEntryGreater>(IsEntryGreater(filterIter->entry),
+                                                               thrust::raw_pointer_cast(&(*lastIter))
+                                         ));
+                    break;
+                }
+                case GREATER_EQ:{
+                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                         SelectEntry(layer+1, filterGroup.resultMember),
+                                         FetchEntryWithChildID<IsEntryGreaterEQ>(IsEntryGreaterEQ(filterIter->entry),
+                                                               thrust::raw_pointer_cast(&(*lastIter))
+                                         ));
+                    break;
+                }
+                case EQ:{
+                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                         SelectEntry(layer+1, filterGroup.resultMember),
+                                         FetchEntryWithChildID<IsPartialEntryMatch>(IsPartialEntryMatch(filterIter->entry),
+                                                               thrust::raw_pointer_cast(&(*lastIter))
+                                         ));
+                    break;
+                }
+                case LESS_EQ:{
+                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                         SelectEntry(layer+1, filterGroup.resultMember),
+                                         FetchEntryWithChildID<IsEntryLessEQ>(IsEntryLessEQ(filterIter->entry),
+                                                               thrust::raw_pointer_cast(&(*lastIter))
+                                         ));
+                    break;
+                }
+                case LESS:{
+                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                         SelectEntry(layer+1, filterGroup.resultMember),
+                                         FetchEntryWithChildID<IsEntryLess>(IsEntryLess(filterIter->entry),
+                                                               thrust::raw_pointer_cast(&(*lastIter))
+                                         ));
+                    break;
+                }
+                case KEY_ONLY:{
+                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                         SelectEntry(layer+1, filterGroup.resultMember),
+                                         FetchEntryWithChildID<EntryKeyMatch>(EntryKeyMatch(filterIter->entry),
+                                                               thrust::raw_pointer_cast(&(*lastIter))
+                                         ));
+                    break;
+                }
+                case VAL_ONLY:{
+                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                         SelectEntry(layer+1, filterGroup.resultMember),
+                                         FetchEntryWithChildID<EntryValMatch>(EntryValMatch(filterIter->entry),
+                                                               thrust::raw_pointer_cast(&(*lastIter))
+                                         ));
+                    break;
+                }
+                default:{
+                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                         SelectEntry(layer+1, filterGroup.resultMember),
+                                         FetchEntryWithChildID<IsPartialEntryMatch>(IsPartialEntryMatch(filterIter->entry),
+                                                               thrust::raw_pointer_cast(&(*lastIter))
+                                         ));
+                }
+            }
 
             lastIter = thrust::find_if(lastIter+1, deviceEntries.end(), IsEntrySelected(layer));
         }
     }
 }
 
-unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filters) {
-    thrust::transform(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), UnselectEntry());
-    for (FilterGroup::const_iterator firstGroupIter = filters[0].group.begin(); firstGroupIter != filters[0].group.end();
-         ++firstGroupIter) {
-        thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
-                             SelectEntry(filters.size(), filters[0].resultMember),
-                             IsPartialEntryMatch(*firstGroupIter));
+unsigned long int GPUDBDriver::selectAllSubelementsWithParentsSelected(const unsigned long int beginLayer){
+    unsigned long int curLayer = beginLayer;
+    bool foundOneOnLayer = true;
+
+    while(foundOneOnLayer) {
+        foundOneOnLayer = false;
+        DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
+                                                            IsEntrySelected(curLayer));
+        while (lastIter != deviceEntries.end()) {
+            thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                 SelectEntry(curLayer + 1, false),
+                                 GetElementWithParent(thrust::raw_pointer_cast(&(*lastIter))));
+            lastIter = thrust::find_if(lastIter + 1, deviceEntries.end(),
+                                       IsEntrySelected(curLayer));
+            foundOneOnLayer = true;
+        }
+        if(foundOneOnLayer)
+            curLayer++;
     }
 
-    unsigned long int layer = filters.size();
+    return curLayer-1;
+}
+
+unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filters) {
+    thrust::transform(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), UnselectEntry());
+    for (FilterGroup::const_iterator firstGroupIter = filters[0].group.begin();
+         firstGroupIter != filters[0].group.end();
+         ++firstGroupIter) {
+        switch (firstGroupIter->comparator){
+            case GREATER:{
+                thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                     SelectEntry(1, filters[0].resultMember),
+                                     IsEntryGreater(firstGroupIter->entry));
+                break;
+            }
+            case GREATER_EQ:{
+                thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                     SelectEntry(1, filters[0].resultMember),
+                                     IsEntryGreaterEQ(firstGroupIter->entry));
+                break;
+            }
+            case EQ:{
+                thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                     SelectEntry(1, filters[0].resultMember),
+                                     IsPartialEntryMatch(firstGroupIter->entry));
+                break;
+            }
+            case LESS_EQ:{
+                thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                     SelectEntry(1, filters[0].resultMember),
+                                     IsEntryLessEQ(firstGroupIter->entry));
+                break;
+            }
+            case LESS:{
+                thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                     SelectEntry(1, filters[0].resultMember),
+                                     IsEntryLess(firstGroupIter->entry));
+                break;
+            }
+            case KEY_ONLY:{
+                thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                     SelectEntry(1, filters[0].resultMember),
+                                     EntryKeyMatch(firstGroupIter->entry));
+                break;
+            }
+            case VAL_ONLY:{
+                thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                     SelectEntry(1, filters[0].resultMember),
+                                     EntryValMatch(firstGroupIter->entry));
+                break;
+            }
+            default:{
+                thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                                            SelectEntry(1, filters[0].resultMember),
+                                            IsPartialEntryMatch(firstGroupIter->entry));
+            }
+        }
+    }
+
+    unsigned long int layer = 1;
     for (FilterSet::const_iterator iter = filters.begin()+1; iter != filters.end(); ++iter) {
         optimizedSearchEntriesDown(*iter, layer);
-        layer--;
+        layer++;
     }
+    layer = selectAllSubelementsWithParentsSelected(layer);
 
     return layer;
 }
@@ -151,7 +285,6 @@ void GPUDBDriver::buildResultsBottomUp(std::vector<Doc> & result, const unsigned
             lastValidParent = 0;
         }
         while(parentIter != deviceEntries.end()){
-
             Entry hostChild = *childIter;
             Entry hostParent = *parentIter;
 
@@ -166,8 +299,9 @@ void GPUDBDriver::buildResultsBottomUp(std::vector<Doc> & result, const unsigned
 
             if(hostParent.isResultMember){
                 lastValidParent = &docIDMap[hostParent.id];
+                break;
             }
-            parentIter = thrust::find_if(parentIter + 1, deviceEntries.end(),
+            parentIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
                                          GetElementWithChild(thrust::raw_pointer_cast(&(*parentIter))));
 
         }
