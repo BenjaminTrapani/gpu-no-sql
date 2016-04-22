@@ -1,5 +1,5 @@
 //
-// TODO
+// header for FilterMap
 //
 
 #ifndef GPU_NO_SQL_FILTERMAP_H

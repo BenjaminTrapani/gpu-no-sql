@@ -1,5 +1,5 @@
 //
-// TODO
+// Header for DocMap class
 //
 
 #ifndef GPU_NO_SQL_DOCMAP_H

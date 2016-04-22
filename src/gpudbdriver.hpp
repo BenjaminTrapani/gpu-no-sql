@@ -2,8 +2,6 @@
 // GPUDB Driver Header (API and Helpers)
 //
 
-// TODO error codes for queries?
-
 #ifndef SRC_GPUDBDRIVER_H
 #define SRC_GPUDBDRIVER_H
 
@@ -58,7 +56,6 @@ namespace GPUDB {
             return deviceEntries.size();
         }
 
-        // TODO
         // return the id of the given filters applied in top down order, matching the key and that is a doc
         // should error on any filters that do not fit the style
         unsigned long long int getDocumentID(const FilterSet & sourceFilters);

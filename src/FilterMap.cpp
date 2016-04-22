@@ -1,5 +1,5 @@
 //
-// TODO
+// Represents a
 //
 
 #include "FilterMap.hpp"

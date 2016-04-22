@@ -2,12 +2,7 @@
 // Headers for the user level API
 //
 
-// TODO
-// Comparators
-
-// TODO
-// Get rid of magic number size of FilterMap and DocMap using construct with size parameter
-// limit by int
+// TODO Get rid of magic number size of FilterMap and DocMap using construct with size parameter, limit max size by int type
 
 #ifndef GPU_NO_SQL_GPUDB_API_H
 #define GPU_NO_SQL_GPUDB_API_H
