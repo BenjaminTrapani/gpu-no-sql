@@ -5,6 +5,8 @@
 #include "gpudbdrivertest.hpp"
 #include "gpudbdriver.hpp"
 #include "EntryUtils.h"
+#include "Filter.h"
+
 using namespace GPUDB;
 
 void GPUDBDriverTest::runTests(){
@@ -49,8 +51,10 @@ void GPUDBDriverTest::runTests(){
     filters1.resultMember = false;
     FilterGroup filters2;
     filters2.resultMember = true;
-    filters1.group.push_back(filter1);
-    filters2.group.push_back(filter2);
+    Filter concreteFilter1(filter1, EQ);
+    Filter concreteFilter2(filter2, EQ);
+    filters1.group.push_back(concreteFilter1);
+    filters2.group.push_back(concreteFilter2);
 
     FilterSet filterSet;
     filterSet.push_back(filters2);
@@ -78,10 +82,10 @@ void GPUDBDriverTest::runTests(){
             printf("update single element latency = %fms\n", diff2);
 
             FilterGroup filterGroup1;
-            filterGroup1.group.push_back(iter->kvPair);
+            filterGroup1.group.push_back(Filter(iter->kvPair, EQ));
             filterGroup1.resultMember = false;
             FilterGroup filterGroup2;
-            filterGroup2.group.push_back(newEntry);
+            filterGroup2.group.push_back(Filter(newEntry, EQ));
             filterGroup2.resultMember = true;
             FilterSet toCheck;
             toCheck.push_back(filterGroup1);
@@ -99,7 +103,7 @@ void GPUDBDriverTest::runTests(){
     float deleteDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
 
     FilterGroup searchForLastEntry;
-    searchForLastEntry.group.push_back(lastEntry);
+    searchForLastEntry.group.push_back(Filter(lastEntry, EQ));
     FilterSet searchForLastEntryFilter;
     searchForLastEntryFilter.push_back(searchForLastEntry);
     std::vector<Doc> lastEntryResult = driver.getDocumentsForFilterSet(searchForLastEntryFilter);
@@ -120,14 +124,25 @@ void GPUDBDriverTest::runDeepNestingTests(){
 
     GPUDBDriver driver;
 
-    for(size_t i = 2; i < driver.getTableSize(); i+=5){
+    for(size_t i = 1; i < driver.getTableSize(); i+=17){
         Doc root;
         EntryUtils::assignKeyToEntry(root.kvPair, i);
         root.kvPair.data.bigVal=i;
         root.kvPair.valType=GPUDB_BGV;
         root.kvPair.id = i;
         root.kvPair.parentID = 0;
-        generateNestedDoc(3, &root, i+1);
+        Doc * curParent = &root;
+        for(int j = 1; j < 16; j++){
+            Entry curVal;
+            EntryUtils::assignKeyToEntry(curVal, i + j);
+            curVal.valType = GPUDB_BGV;
+            curVal.data.bigVal = i + j;
+            curVal.id = i + j;
+
+            Doc intermediate(curVal);
+            Doc * permIntermediate = curParent->addChild(intermediate);
+            curParent = permIntermediate;
+        }
         driver.create(root);
     }
     driver.syncCreates();
@@ -135,16 +150,17 @@ void GPUDBDriverTest::runDeepNestingTests(){
 
     FilterSet filterByFirstFourNest;
     filterByFirstFourNest.reserve(4);
-    for(int i = 2; i < 5; i++){
+    for(int i = 1; i < 5; i++){
         Entry curFilter;
         EntryUtils::assignKeyToEntry(curFilter, i);
         curFilter.valType=GPUDB_BGV;
         curFilter.data.bigVal = i;
         FilterGroup curGroup;
-        if(i==3){
+        if(i==4){
             curGroup.resultMember = true;
         }
-        curGroup.group.push_back(curFilter);
+        Filter theFilter(curFilter, EQ);
+        curGroup.group.push_back(theFilter);
         filterByFirstFourNest.push_back(curGroup);
     }
 
@@ -161,20 +177,6 @@ void GPUDBDriverTest::runDeepNestingTests(){
     }
 
     printf("Deep nesting test finished.\n\n");
-}
-
-void GPUDBDriverTest::generateNestedDoc(size_t nestings, Doc * parent, size_t beginIndex) {
-    Entry curVal;
-    EntryUtils::assignKeyToEntry(curVal, beginIndex);
-    curVal.valType = GPUDB_BGV;
-    curVal.data.bigVal = beginIndex;
-    curVal.id = beginIndex;
-
-    Doc intermediate(curVal);
-    Doc * permIntermediate = parent->addChild(intermediate);
-
-    if(nestings>0)
-        generateNestedDoc(nestings-1, permIntermediate, beginIndex+1);
 }
 
 int main(int argc, char * argv[]){

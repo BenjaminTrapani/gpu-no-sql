@@ -83,7 +83,7 @@ namespace GPUDB {
         HostVector_t * hostCreateBuffer;
 
         void optimizedSearchEntriesDown(const FilterGroup & filterGroup, const unsigned long int layer);
-
+        unsigned long int selectAllSubelementsWithParentsSelected(const unsigned long int beginLayer);
         unsigned long int internalGetDocsForFilterSet(const FilterSet &filters);
         void buildResultsBottomUp(std::vector<Doc> & result, const unsigned long int beginLayer);
 

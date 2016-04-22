@@ -5,30 +5,9 @@
 #ifndef GPU_NO_SQL_FUNCTORS_H
 #define GPU_NO_SQL_FUNCTORS_H
 
+#include "EntryComparators.h"
+
 namespace GPUDB {
-    struct IsPartialEntryMatch : thrust::unary_function<Entry, bool> {
-        inline IsPartialEntryMatch(const Entry & filter):_filter(filter){}
-
-        __device__ __host__
-        inline bool operator()(const Entry & val) const {
-            return val == _filter;
-        }
-
-    private:
-        const Entry _filter;
-    };
-
-    struct IsFullEntryMatch : thrust::unary_function<Entry, bool> {
-        inline IsFullEntryMatch(const Entry & filter):_filter(filter){}
-
-        __device__ __host__
-        inline bool operator()(const Entry & val)const{
-            return val.fullCompare(_filter);
-        }
-
-    private:
-        Entry _filter;
-    };
 
     struct IsSelectedWithParentID : thrust::unary_function<Entry, bool> {
         inline IsSelectedWithParentID(const unsigned long long int desiredParentID):
@@ -43,33 +22,37 @@ namespace GPUDB {
         unsigned long long int _desiredParentID;
     };
 
+    template<class Comparator_t>
     struct FetchEntryWithParentID : thrust::unary_function<Entry,bool> {
-        inline FetchEntryWithParentID(const Entry & filter, const Entry* validIndex):_filter(filter),
-                                        _validIndex(validIndex) {
+        inline FetchEntryWithParentID(const Entry* validIndex,
+                                      const Comparator_t & comp):
+                                        _validIndex(validIndex), _comp(comp)
+        {
         }
 
         __device__ __host__
         inline bool operator()(const Entry & ival) const {
-            return _validIndex->parentID == ival.id && ival == _filter;
+            return _validIndex->parentID == ival.id && _comp(ival);
         }
 
     private:
-        const Entry _filter;
         const Entry * _validIndex;
+        const Comparator_t _comp;
     };
 
+    template<class Comparator_t>
     struct FetchEntryWithChildID : thrust::unary_function<Entry,bool> {
-        inline FetchEntryWithChildID(const Entry & filter, const Entry* validIndex):_filter(filter),
-                                                                                     _validIndex(validIndex) {
+        inline FetchEntryWithChildID(const Comparator_t & comp,
+                                     const Entry* validIndex):_comp(comp), _validIndex(validIndex) {
         }
 
         __device__ __host__
         inline bool operator()(const Entry & ival) const {
-            return _validIndex->id == ival.parentID && ival == _filter;
+            return _validIndex->id == ival.parentID && _comp(ival);
         }
 
     private:
-        const Entry _filter;
+        const Comparator_t _comp;
         const Entry * _validIndex;
     };
 
@@ -78,7 +61,19 @@ namespace GPUDB {
 
         __device__ __host__
         inline bool operator()(const Entry & ival) const {
-            return _validIndex->parentID == ival.id;
+            return _validIndex->parentID && _validIndex->parentID == ival.id;
+        }
+
+    private:
+        const Entry * _validIndex;
+    };
+
+    struct GetElementWithParent : thrust::unary_function<Entry, bool>{
+        inline GetElementWithParent(const Entry* validIndex): _validIndex(validIndex) {}
+
+        __device__ __host__
+        inline bool operator()(const Entry & ival) const {
+            return _validIndex->id && _validIndex->id == ival.parentID;
         }
 
     private:
@@ -109,28 +104,17 @@ namespace GPUDB {
         unsigned long int _layer;
     };
 
+    template<class Comparator_t>
     struct IsEntrySelectedAndPartialMatched : thrust::unary_function<Entry, bool> {
-        inline IsEntrySelectedAndPartialMatched(const Entry & expected):_expected(expected){}
+        inline IsEntrySelectedAndPartialMatched(const Comparator_t & comp):_comp(comp){}
 
         __device__ __host__
         inline bool operator()(const Entry & val) const {
-            return val.selected && val == _expected;
+            return val.selected && _comp(val);
         }
 
     private:
-        const Entry _expected;
-    };
-
-    struct EntryLessThan : thrust::unary_function<Entry, bool> {
-        inline EntryLessThan(const Entry & filter):_filter(filter){}
-
-        __device__ __host__
-        inline bool operator()(const Entry & val) const {
-            return val.key == _filter.key && val.valType == _filter.valType && val.data.bigVal < _filter.data.bigVal;
-        }
-
-        private:
-            Entry _filter;
+        const Comparator_t _comp;
     };
 
     struct ExtractParentID : thrust::unary_function<Entry, GPUSizeType>{
@@ -183,7 +167,7 @@ namespace GPUDB {
         }
     };
 
-    struct FetchEntryWithParentIDs : thrust::unary_function<Entry, bool> {
+    /*struct FetchEntryWithParentIDs : thrust::unary_function<Entry, bool> {
         inline FetchEntryWithParentIDs(Entry* validIndices, const size_t indexToExamine, const Entry & filter):
                 _validIndices(validIndices), _indexToExamine(indexToExamine), _filter(filter) {
         }
@@ -197,9 +181,9 @@ namespace GPUDB {
         Entry * _validIndices;
         const size_t _indexToExamine;
         const Entry _filter;
-    };
+    };*/
 
-    struct FetchDescendentEntry : thrust::unary_function<Entry, bool> {
+    /*struct FetchDescendentEntry : thrust::unary_function<Entry, bool> {
         inline FetchDescendentEntry(const Entry * desiredParentID): _desiredParentID(desiredParentID){}
 
         __device__ __host__
@@ -209,7 +193,7 @@ namespace GPUDB {
 
     private:
         const Entry * _desiredParentID;
-    };
+    };*/
 }
 
 #endif //GPU_NO_SQL_FUNCTORS_H
