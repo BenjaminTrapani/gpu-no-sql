@@ -50,7 +50,7 @@ public:
 
 
     // Querying
-    GPUDB_QueryResult query(int filterID);
+    std::vector<GPUDB_QueryResult> query(int filterID);
 
     // Updating
     // Returns an error/success code

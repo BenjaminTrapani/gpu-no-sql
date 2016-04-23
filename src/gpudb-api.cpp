@@ -184,7 +184,7 @@ GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
     newKV.key = intToString(resultDoc.kvPair.key);
     newKV.type = resultDoc.kvPair.valType;
     newKV.value = dataToValue(resultDoc.kvPair.data, newKV.type);
-    userDoc.kv = resultDoc.kvPair;
+    userDoc.kv = newKV;
 
     // Handle the children
     if (!resultDoc.children.empty()) {
