@@ -42,7 +42,7 @@ int DocMap::addDoc(std::vector <std::string> strings) {
 
         newEntry.valType = GPUDB_DOC;
         if (strings.at(i).size() < 16) {
-            newEntry.key = strings.at(i).c_str();
+            newEntry.key = stringToInt(strings.at(i).c_str());
         } else {
             return -1; // TODO error code
         }

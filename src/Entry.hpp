@@ -6,6 +6,7 @@
 #define GPU_NO_SQL_ENTRY_H
 
 #include "TypesValues.hpp"
+#include "presets.hpp"
 
 namespace GPUDB {
 
@@ -13,8 +14,7 @@ namespace GPUDB {
 
         unsigned long long int id;
         unsigned long long int parentID;
-        static const unsigned char KeyLen = 2;
-        long long int key[KeyLen];
+        long long int key[STRING_SIZE_INT];
 
         GPUDB_Type valType;
         GPUDB_Data data;
