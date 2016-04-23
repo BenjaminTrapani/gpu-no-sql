@@ -57,7 +57,7 @@ namespace GPUDB {
         size_t numEntries;
         DeviceVector_t deviceEntries;
 
-        DeviceVector_t * deviceIntermediateBuffer1;
+        //DeviceVector_t * deviceIntermediateBuffer1;
         HostVector_t * hostResultBuffer;
         HostVector_t * hostCreateBuffer;
 
