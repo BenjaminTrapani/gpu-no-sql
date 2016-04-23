@@ -2,6 +2,7 @@ Work Needed Summary
 
 Adrian Work:
 API Work
+    StringConversion
     Debugging - Try to Compile this shit
     Error Code Documentation: 15
 
