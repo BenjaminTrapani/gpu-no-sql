@@ -46,7 +46,7 @@ namespace GPUDB {
 
         void update(const Entry & searchFilter, const Entry &updates);
 
-        void deleteAll(const Entry & searchFilter);
+        void deleteBy(const Entry & searchFilter);
 
         inline size_t getTableSize() const {
             return numEntries;

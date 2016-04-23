@@ -95,7 +95,7 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & val
     return 0;
 }
 
-int GPU_NOSQL_DB::setEntryVal(Entry *entry, GPUDB_Value & value, GPUDB_Type type) {
+void GPU_NOSQL_DB::setEntryVal(Entry *entry, GPUDB_Value & value, GPUDB_Type type) {
     entry.data.bigVal = 0;
     if (type == GPUDB_BLN) {
         entry->data->b = value.b;
@@ -107,12 +107,9 @@ int GPU_NOSQL_DB::setEntryVal(Entry *entry, GPUDB_Value & value, GPUDB_Type type
         entry->data->c = value.c;
     } else if (type == GPUDB_STR) {
         entry->data->s = value.s;
-    } else if (type == GPUDB_BGV) {
-        entry->data->bigVal = value.bigVal;
     } else {
-        return -1;
+        entry->data->bigVal = value.bigVal;
     }
-    return 0;
 }
 
 int GPU_NOSQL_DB::batchAdd(int docID, std::vector<std::string> & keys, std::vector<std::string> & values,
@@ -170,9 +167,49 @@ int GPU_NOSQL_DB::deleteFilter(int filterID) {
 GPUDB_QueryResult GPU_NOSQL_DB::query(int filterID) {
     // Get the resulting document
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
-    // TODO populate the user format with the result doc
-    GPUDB_QueryResult r;
-    return r;
+
+    GPUDB_QueryResult result = translateDoc(resultDoc);
+
+    return result;
+}
+
+GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
+    // Set up the parent doc
+    GPUDB_QueryResult resultDoc;
+
+    ResultKV newKV;
+    newKV.key = resultDoc.kvPair.key;
+    newKV.type = resultDoc.kvPair.valType;
+    newKV.value = dataToValue(resultDoc.kvPair.data, newKV.type);
+    resultDoc.kvPair = resultDoc.kvPair;
+
+    // Handle the children
+    if (!resultDoc.children.empty()) {
+        for (std::list<Entry>::iterator it = resultDoc.children.begin(); it != resultDoc.children.end(); it++) {
+            GPUDB_QueryResult childResult = translateDoc(*it);
+        }
+    }
+
+    return resultDoc;
+}
+
+GPUDB_Value GPU_NOSQL_DB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
+    GPUDB_Value v;
+    v.bigVal = 0;
+    if (type == GPUDB_BLN) {
+        v.b = data.b;
+    } else if (type == GPUDB_INT) {
+        v.n = data.n;
+    } else if (type == GPUDB_FLT) {
+        v.f = data.f;
+    } else if (type == GPUDB_CHAR) {
+        v.c = data.c;
+    } else if (type == GPUDB_STR) {
+        v.s = data.s;
+    } else {
+        v.bigVal = value.bigVal;
+    }
+    return v;
 }
 
 // ********************************************************************************
@@ -215,12 +252,8 @@ int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
     std::list<Entry> allEntries;
     flattenDoc(resultDoc &allEntries);
 
-    // TODO need driver changes
-    // implementation - delete a list of entries, not just a single entry
-    // goal: batch deletes, much more efficient
-    // driver.deleteAll(allEntries);
     for (std::list<Entry>::iterator it = allEntries.begin(); it != allEntries.end(); it++) {
-        driver.deleteAll(*it);
+        driver.deleteBy(*it);
     }
 
     return -1; // TODO error codes for entire function

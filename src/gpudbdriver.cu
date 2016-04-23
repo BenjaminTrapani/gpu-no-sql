@@ -91,7 +91,7 @@ void GPUDBDriver::update(const Entry & searchFilter, const Entry & updates) {
                          IsFullEntryMatch(searchFilter));
 }
 
-void GPUDBDriver::deleteAll(const Entry & searchFilter) {
+void GPUDBDriver::deleteBy(const Entry & searchFilter) {
     thrust::remove_if(deviceEntries.begin(), deviceEntries.end(), IsFullEntryMatch(searchFilter));
 }
 

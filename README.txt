@@ -2,9 +2,6 @@ Work Needed Summary
 
 Adrian Work:
 API Work
-    Detailed Implementations: 3
-        Populate Result Format in query() - 2
-            Create Query Type
     Ben Changes Adaptation
         Key Type
     Debugging - Try to Compile this shit
