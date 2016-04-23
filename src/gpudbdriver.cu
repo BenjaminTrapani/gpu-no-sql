@@ -36,22 +36,22 @@ GPUDBDriver::GPUDBDriver() {
     cudaDeviceProp propOfInterest;
     cudaGetDeviceProperties(&propOfInterest, 0);
     size_t memBytes = propOfInterest.totalGlobalMem;
-    size_t allocSize = memBytes*0.125f; //0.12
+    size_t allocSize = memBytes*0.25f; //0.12
     numEntries = allocSize/sizeof(Entry);
     printf("Num entries = %i\n", numEntries);
 
     //buffer allocation and initialization
     deviceEntries.reserve(numEntries);
 
-    deviceIntermediateBuffer1 = new DeviceVector_t(numEntries);
+    //deviceIntermediateBuffer1 = new DeviceVector_t(numEntries);
     hostResultBuffer = new HostVector_t(numEntries);
     hostCreateBuffer = new HostVector_t();
     hostCreateBuffer->reserve(numEntries);
 }
 
 GPUDBDriver::~GPUDBDriver() {
-    delete deviceIntermediateBuffer1;
-    deviceIntermediateBuffer1=0;
+    //delete deviceIntermediateBuffer1;
+    //deviceIntermediateBuffer1=0;
 
     delete hostResultBuffer;
     hostResultBuffer=0;
@@ -101,7 +101,6 @@ void GPUDBDriver::optimizedSearchEntriesDown(const FilterGroup & filterGroup, co
          ++filterIter) {
         DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
                                                             IsEntrySelected(layer));
-        //EntryComparatorUtils::EntryComparator_t curComparator = EntryComparatorUtils::getFunctorForFilter(*filterIter);
         while (lastIter != deviceEntries.end()) {
             switch (filterIter->comparator){
                 case GREATER:{
@@ -198,6 +197,8 @@ unsigned long int GPUDBDriver::selectAllSubelementsWithParentsSelected(const uns
 }
 
 unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filters) {
+    clock_t t1, t2;
+    t1 = clock();
     thrust::transform(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), UnselectEntry());
     for (FilterGroup::const_iterator firstGroupIter = filters[0].group.begin();
          firstGroupIter != filters[0].group.end();
@@ -258,19 +259,28 @@ unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filt
         optimizedSearchEntriesDown(*iter, layer);
         layer++;
     }
+    t2 = clock();
+    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("    Selecting all for querry took %fms\n", diff);
+
+    t1 = clock();
     layer = selectAllSubelementsWithParentsSelected(layer);
+    t2 = clock();
+    diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("    Selecting all subelements took %fms\n", diff);
 
     return layer;
 }
 
 void GPUDBDriver::buildResultsBottomUp(std::vector<Doc> & result, const unsigned long int beginLayer){
-    DeviceVector_t::iterator lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(),
+    /*DeviceVector_t::iterator lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(),
                                                         deviceIntermediateBuffer1->begin(),
-                                                        IsEntrySelected(beginLayer));
+                                                        IsEntrySelected(beginLayer));*/
 
     std::unordered_map<unsigned long int, Doc> docIDMap;
-    for(DeviceVector_t::iterator iter = deviceIntermediateBuffer1->begin();
-            iter != lastIter; ++iter){
+    DeviceVector_t::iterator iter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
+                                                    IsEntrySelected(beginLayer));
+    while (iter != deviceEntries.end()){
 
         DeviceVector_t::iterator childIter = iter;
         Entry curHostChild = *childIter;
@@ -308,6 +318,8 @@ void GPUDBDriver::buildResultsBottomUp(std::vector<Doc> & result, const unsigned
         if(lastValidParent) {
             result.push_back(*lastValidParent);
         }
+        iter = thrust::find_if(iter + 1, deviceEntries.end(),
+                               IsEntrySelected(beginLayer));
     }
 }
 
@@ -317,9 +329,13 @@ std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters
     unsigned long int finalLevel = internalGetDocsForFilterSet(filters);
     t2 = clock();
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-
+    printf("  Select matches took %fms\n", diff);
     std::vector<Doc> result;
+    t1 = clock();
     buildResultsBottomUp(result, finalLevel);
+    t2 = clock();
+    diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("  Build results took %fms\n", diff);
     return result;
 }
 
