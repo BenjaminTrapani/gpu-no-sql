@@ -9,6 +9,7 @@
 #include <string>
 #include "FilterSet.hpp"
 #include "gpudbdriver.hpp"
+#include "presets.hpp"
 
 using namespace GPUDB;
 
@@ -33,6 +34,8 @@ private:
     unsigned long long int docs[1000];
     FilterSet filters[1000];
     std::vector<std::string> paths[1000];
+
+    bool validID(int filterID);
 };
 
 #endif //GPU_NO_SQL_DOCMAP_H

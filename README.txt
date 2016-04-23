@@ -2,10 +2,7 @@ Work Needed Summmary
 
 Adrian Work:
 API Work
-    FilterMap implementation
-        Check if out of bounds before accessing
     DocMap implementation
-        Check if out of bounds before accessing
         Implement filter creation with comparators Driver expansion
     Detailed Implementations: 4
         addtoFilter() - 2

@@ -5,15 +5,18 @@
 #include "gpudb-api.hpp"
 #include "stdio.h"
 #include <cstdio>
-#include "gpudbdriver.hpp"
+#include "presets.hpp"
 
 using namespace GPUDB;
 
 GPU_NOSQL_DB::GPU_NOSQL_DB() {
     curID = 0;
-    driver = GPUDBDriver();
-    docs = DocMap(&driver);
-    filters = FilterMap(&driver, &docs);
+    GPUDBDriver d();
+    driver = d;
+    DocMap m(&driver);
+    docs = m;
+    FilterMap fm();
+    filters = fm;
 }
 
 // ********************************************************************************
