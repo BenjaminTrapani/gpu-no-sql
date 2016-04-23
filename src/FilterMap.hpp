@@ -5,7 +5,7 @@
 #ifndef GPU_NO_SQL_FILTERMAP_H
 #define GPU_NO_SQL_FILTERMAP_H
 
-#include <vector>
+#include <list>
 #include <string>
 #include "FilterSet.hpp"
 #include "gpudbdriver.hpp"
@@ -23,7 +23,7 @@ public:
     FilterSet getFilter(int filterID);
 
     // adds the given filter group to the filter set ID
-    int addToFilter(int filterID, Entry e);
+    int addToFilter(int filterID, Entry e, GPUDB_COMP comp);
 
     // advance filter one level
     int advanceFilter(int filterID);
@@ -31,10 +31,10 @@ public:
     // Removes the external id from the mappings and returns an exit code
     int removeFilter(int filterID);
 private:
-    GPUDBDriver *driver;
-    DocMap *documentMap;
+    //GPUDBDriver *driver;
+    //DocMap *documentMap;
 
-    std::vector<int> openSpots; // TODO switch to list
+    std::list<int> openSpots;
 
     FilterSet filters[1000];
     FilterGroup curGroups[1000];

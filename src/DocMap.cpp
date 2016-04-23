@@ -8,9 +8,8 @@ using namespace GPUDB;
 
 DocMap::DocMap(GPUDBDriver *d) {
     // Set Up Open Docs
-    openSpots.reserve(1000);
-    for (int i = 999; i > 1; i--) {
-        openSpots.push_back(i);
+    for (int i = 999; i > 0; i--) {
+        openSpots.push_front(i);
     }
 
     // Set up root
@@ -20,6 +19,7 @@ DocMap::DocMap(GPUDBDriver *d) {
     paths[0] = empty;
     filters[0] = empty;
 
+    // Set up driver pointer
     driver = d;
 }
 
@@ -29,8 +29,8 @@ int DocMap::addDoc(std::vector <std::string> strings) {
     }
 
     // Get a place
-    int place = openSpots.back();
-    openSpots.pop_back();
+    int place = openSpots.front();
+    openSpots.pop_front();
 
     // Create filter set
     FilterSet filters;
