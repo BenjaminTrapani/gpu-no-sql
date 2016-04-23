@@ -38,16 +38,19 @@ int DocMap::addDoc(std::vector <std::string> strings) {
         FilterGroup g;
 
         // Create the entry
-        Entry newFilter;
+        Entry newEntry;
 
-        // TODO set filter type with expansion accordingly
-
-        newFilter.valType = GPUDB_DOC;
+        newEntry.valType = GPUDB_DOC;
         if (strings.at(i).size() < 16) {
-            newFilter.key = strings.at(i).c_str();
+            newEntry.key = strings.at(i).c_str();
         } else {
             return -1; // TODO error code
         }
+
+        // Create the filter
+        Filter newFilter;
+        newFilter.entry = newEntry;
+        newFilter.comparator = KEY_ONLY;
 
         // Add the entry to the group
         g.group.push_back(newFilter);

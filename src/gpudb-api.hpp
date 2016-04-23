@@ -38,9 +38,9 @@ public:
     // Returns the new filter ID on the given Doc
     int newFilter(int docID);
     // Returns an error/success code
-    int addToFilter(int filterID, std::vector<std::string> key);
+    int addToFilter(int filterID, std::string key);
     // Returns an error/success code
-    int addToFilter(int filterID, std::vector<std::string> key, GPUDB_Value & value, GPUDB_COMP comp);
+    int addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type type, GPUDB_COMP comp);
     // Move the filter to the next level
     int advanceFilter(int filterID);
     // Delete the current filter

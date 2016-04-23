@@ -68,7 +68,7 @@ int GPU_NOSQL_DB::newDoc(int docID, std::string key) {
 }
 
 int GPU_NOSQL_DB::addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type) {
-    int res = addtoDocNoSync(docID, key, value, type);
+    int res = addtoDocNoSync(docID, key, value, type); // TODO handle error code
     driver.syncCreates();
     retun res;
 }
@@ -139,20 +139,21 @@ int GPU_NOSQL_DB::newFilter(int docID) {
     return filters.newFilter(docs.getFilterSet(docID));
 }
 
-int GPU_NOSQL_DB::addToFilter(int filterID, std::vector<std::string> key) {
-    // TODO
+int GPU_NOSQL_DB::addToFilter(int filterID, std::string key) {
     // Translate key into an Entry for a search
     Entry newEntry;
+    newEntry.key = key.c_str();
     // Add new entry to given filter
-    return filters.addToFilter(filterID, newEntry);
+    return filters.addToFilter(filterID, newEntry, KEY_ONLY);
 }
 
-int GPU_NOSQL_DB::addToFilter(int filterID, std::vector<std::string> key, GPUDB_Value & value, GPUDB_COMP comp) {
-    // TODO
+int GPU_NOSQL_DB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type type, GPUDB_COMP comp) {
     // Translate key and value into an Entry for a search
     Entry newEntry;
+    newEntry.key = key.c_str();
+    setEntryVal(&newEntry, value, type);
     // Add new entry to given filter
-    return filters.addToFilter(filterID, newEntry, comp); // TODO properly use comp here
+    return filters.addToFilter(filterID, newEntry, comp);
 }
 
 int GPU_NOSQL_DB::advanceFilter(int filterID) {
