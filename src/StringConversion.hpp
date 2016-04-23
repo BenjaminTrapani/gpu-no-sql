@@ -7,7 +7,7 @@
 
 #include "presets.hpp"
 
-long long int * stringToInt(const char *string);
+long long int * stringToInt(const char str[16]);
 char * intToString(const long long int str[2]);
 
 #endif //GPU_NO_SQL_STRINGCONVERSION_HPP

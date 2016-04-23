@@ -28,7 +28,7 @@ int GPU_NOSQL_DB::getRootDoc() {
 }
 
 // Returns -1 when not enough space, otherwise returns the docID
-int GPU_NOSQL_DB::getDoc(std::vector<std::string> strings) {
+int GPU_NOSQL_DB::getDoc(std::vector<std::string> & strings) {
     return docs.addDoc(strings);
 }
 
@@ -40,7 +40,7 @@ int GPU_NOSQL_DB::deleteDocRef(int docID) {
 // Creation
 
 // Creates a document inside the given doc from ID with key "key"
-int GPU_NOSQL_DB::newDoc(int docID, std::string key) {
+int GPU_NOSQL_DB::newDoc(int docID, std::string & key) {
     // Create the new path
     std::vector<std::string> newPath = docs.getPath(docID);
     newPath.push_back(key);
@@ -69,9 +69,9 @@ int GPU_NOSQL_DB::newDoc(int docID, std::string key) {
 }
 
 int GPU_NOSQL_DB::addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
-    int res = addtoDocNoSync(docID, key, value, type); // TODO handle error code
+    int res = addToDocNoSync(docID, key, value, type); // TODO handle error code
     driver.syncCreates();
-    retun res;
+    return res;
 }
 
 int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
@@ -86,30 +86,27 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & val
         return -1; // TODO error code
     }
     newEntry.valType = type;
-    int success = setEntryVal(&newEntry, value, type);
-    if (success != 0) {
-        return -1; // TODO error code
-    }
+    setEntryVal(newEntry, value, type);
 
     driver.create(newEntry);
 
     return 0;
 }
 
-void GPU_NOSQL_DB::setEntryVal(Entry *entry, GPUDB_Value & value, GPUDB_Type & type) {
+void GPU_NOSQL_DB::setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & type) {
     entry.data.bigVal = 0;
     if (type == GPUDB_BLN) {
-        entry->data->b = value.b;
+        entry.data.b = value.b;
     } else if (type == GPUDB_INT) {
-        entry->data->n = value.n;
+        entry.data.n = value.n;
     } else if (type == GPUDB_FLT) {
-        entry->data->f = value.f;
+        entry.data.f = value.f;
     } else if (type == GPUDB_CHAR) {
-        entry->data->c = value.c;
+        entry.data.c = value.c;
     } else if (type == GPUDB_STR) {
-        entry->data->s = value.s;
+        entry.data.s = value.s;
     } else {
-        entry->data->bigVal = value.bigVal;
+        entry.data.bigVal = value.bigVal;
     }
 }
 
@@ -148,7 +145,7 @@ int GPU_NOSQL_DB::addToFilter(int filterID, std::string key, GPUDB_Value & value
     // Translate key and value into an Entry for a search
     Entry newEntry;
     newEntry.key = stringToInt(key.c_str());
-    setEntryVal(&newEntry, value, type);
+    setEntryVal(newEntry, value, type);
     // Add new entry to given filter
     return filters.addToFilter(filterID, newEntry, comp);
 }
@@ -164,13 +161,19 @@ int GPU_NOSQL_DB::deleteFilter(int filterID) {
 // ********************************************************************************
 // Querying
 
-GPUDB_QueryResult GPU_NOSQL_DB::query(int filterID) {
+std::vector<GPUDB_QueryResult> GPU_NOSQL_DB::query(int filterID) {
     // Get the resulting document
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
 
-    GPUDB_QueryResult result = translateDoc(resultDoc);
+    std::vector<GPUDB_QueryResult> allResults;
 
-    return result;
+    for (std::vector<Doc>::iterator it = resultDoc.begin(); it != resultDoc.end(); it++) {
+        GPUDB_QueryResult result = translateDoc(*it);
+        allResults.push_back(result);
+    }
+
+
+    return allResults;
 }
 
 GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
@@ -181,7 +184,7 @@ GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
     newKV.key = intToString(resultDoc.kvPair.key);
     newKV.type = resultDoc.kvPair.valType;
     newKV.value = dataToValue(resultDoc.kvPair.data, newKV.type);
-    userDoc.kvPair = resultDoc.kvPair;
+    userDoc.kv = resultDoc.kvPair;
 
     // Handle the children
     if (!resultDoc.children.empty()) {
@@ -217,7 +220,7 @@ GPUDB_Value GPU_NOSQL_DB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
 // must give a filter that does not hit a document
 int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type) {
     // Get Matching Entry
-    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
+    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID)).front();
 
     // Check that it is not a doc
     Entry oldEntry = resultDoc.kvPair;
@@ -231,10 +234,7 @@ int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & ty
     revisedEntry.id = oldEntry.id;
     revisedEntry.key = oldEntry.key;
     revisedEntry.valType = type;
-    int dataSetRes = setEntryVal(&revisedEntry, value, type);
-    if (dataSetRes != 0) {
-        return -1; // TODO error code bad value
-    }
+    setEntryVal(revisedEntry, value, type);
 
     // Update the entry
     driver.update(oldEntry, revisedEntry);
@@ -247,10 +247,14 @@ int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & ty
 
 int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
     // Get Matching Docs
-    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
-    // flatten doc into single vector
+    std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
+    // flatten docs into single vector
     std::list<Entry> allEntries;
-    flattenDoc(resultDoc, &allEntries);
+
+    for (std::vector<Doc>::iterator it = resultDoc.begin(); it != resultDoc.end(); it++) {
+        flattenDoc(*it, &allEntries);
+    }
+
 
     for (std::list<Entry>::iterator it = allEntries.begin(); it != allEntries.end(); it++) {
         driver.deleteBy(*it);
@@ -260,7 +264,7 @@ int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
 }
 
 void GPU_NOSQL_DB::flattenDoc(Doc d, std::list<Entry> * targetEntryList) {
-    targetEntryList.push_back(d.kvPair);
+    targetEntryList->push_back(d.kvPair);
     if (!d.children.empty()) {
         for (std::list<Doc>::iterator it = d.children.begin(); it != d.children.end(); it++) {
             flattenDoc(*it, targetEntryList);

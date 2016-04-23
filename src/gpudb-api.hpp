@@ -24,7 +24,7 @@ public:
 
     // Document Identification
     int getRootDoc();
-    int getDoc(std::vector<std::string> strings);
+    int getDoc(std::vector<std::string> & strings);
     int deleteDocRef(int docID);
 
     // Creation
