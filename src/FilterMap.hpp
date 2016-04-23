@@ -34,8 +34,8 @@ public:
 private:
     std::list<int> openSpots;
 
-    FilterSet filters[maxResources];
-    FilterGroup curGroups[maxResources];
+    FilterSet filters[MAX_RESOURCES];
+    FilterGroup curGroups[MAX_RESOURCES];
 
     bool validID(int filterID);
 };
