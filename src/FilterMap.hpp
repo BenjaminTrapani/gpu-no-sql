@@ -9,12 +9,13 @@
 #include <string>
 #include "FilterSet.hpp"
 #include "gpudbdriver.hpp"
+#include "presets.hpp"
 
 using namespace GPUDB;
 
 class FilterMap {
 public:
-    FilterMap(GPUDBDriver *d, DocMap *m);
+    FilterMap();
 
     // Returns the external id for the given doc path
     int newFilter(FilterSet sourceDocFilter);
@@ -31,13 +32,12 @@ public:
     // Removes the external id from the mappings and returns an exit code
     int removeFilter(int filterID);
 private:
-    //GPUDBDriver *driver;
-    //DocMap *documentMap;
-
     std::list<int> openSpots;
 
-    FilterSet filters[1000];
-    FilterGroup curGroups[1000];
+    FilterSet filters[maxResources];
+    FilterGroup curGroups[maxResources];
+
+    bool validID(int filterID);
 };
 
 #endif //GPU_NO_SQL_FILTERMAP_H

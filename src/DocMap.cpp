@@ -72,23 +72,38 @@ int DocMap::addDoc(std::vector <std::string> strings) {
 }
 
 unsigned long long int DocMap::getDoc(int docID) {
+    if (!validID(docID)) {
+        return -1; // TODO error code
+    }
     return docs[docID];
 }
 
 std::vector<std::string> DocMap::getPath(int docID) {
+    if (!validID(docID)) {
+        return -1; // TODO error code
+    }
     return paths[docID];
 }
 
 FilterSet DocMap::getFilterSet(int docID) {
+    if (!validID(docID)) {
+        return -1; // TODO error code
+    }
     return filters[docID];
 }
 
 int DocMap::removeDoc(int docID) {
+    if (!validID(docID)) {
+        return -1; // TODO error code
+    }
     if (docID == 0) {
         return -1; // TODO error code, cannot remove root
     }
     openSpots.push_back(docID);
-    // TODO better add back with random swap
 
     return 0;
+}
+
+bool DocMap::validID(int filterID) {
+    return filterID < maxResources && filterID >= 0;
 }
