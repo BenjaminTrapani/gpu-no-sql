@@ -24,16 +24,16 @@ public:
 
     // Document Identification
     int getRootDoc();
-    int getDoc(std::vector<std::string> strings);
+    int getDoc(std::vector<std::string> & strings);
     int deleteDocRef(int docID);
 
     // Creation
     // Returns the new Doc ID
     int newDoc(int docID, std::string & key);
     // Returns an error/success code
-    int addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type);
+    int addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type);
     // Returns an error/success code
-    int batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> types);
+    int batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> & types);
 
     // Filter Creation and Editing
 
@@ -42,7 +42,7 @@ public:
     // Returns an error/success code
     int addToFilter(int filterID, std::string key);
     // Returns an error/success code
-    int addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type type, GPUDB_COMP comp);
+    int addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type & type, GPUDB_COMP comp);
     // Move the filter to the next level
     int advanceFilter(int filterID);
     // Delete the current filter
@@ -50,11 +50,11 @@ public:
 
 
     // Querying
-    GPUDB_QueryResult query(int filterID);
+    std::vector<GPUDB_QueryResult> query(int filterID);
 
     // Updating
     // Returns an error/success code
-    int updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type);
+    int updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type);
 
     // Deleting
     // Returns an error/success code
@@ -67,13 +67,13 @@ private:
 
     unsigned long long int curID;
 
-    int addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type);
+    int addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type);
 
-    void setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type type);
+    void setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & type);
     GPUDB_Value dataToValue(GPUDB_Data data, GPUDB_Type type);
 
     GPUDB_QueryResult translateDoc(Doc resultDoc);
-    std::vector<Entry> flattenDoc(Doc d);
+    void flattenDoc(Doc d, std:: list<Entry> * targetEntryList);
 };
 
 #endif //GPU_NO_SQL_GPUDB_API_H
