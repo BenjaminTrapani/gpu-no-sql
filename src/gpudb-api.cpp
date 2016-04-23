@@ -10,14 +10,8 @@
 
 using namespace GPUDB;
 
-GPU_NOSQL_DB::GPU_NOSQL_DB() {
-    curID = 0;
-    GPUDBDriver d();
-    driver = d;
-    DocMap m(&driver);
-    docs = m;
-    FilterMap fm();
-    filters = fm;
+GPU_NOSQL_DB::GPU_NOSQL_DB():driver(), docs(&driver), filters(), curID(0) {
+    // empty
 }
 
 // ********************************************************************************
@@ -51,10 +45,9 @@ int GPU_NOSQL_DB::newDoc(int docID, std::string & key) {
     newEntry.id = curID;
     curID += 1;
     newEntry.valType = GPUDB_DOC;
-    if (key.length() < MAX_STRING_SIZE) {
-        newEntry.key = stringToInt(key.c_str());
-    } else {
-        return -1; // TODO error code
+    int res = StringConversion::stringToInt(newEntry.key, key);
+    if (res != 0) {
+       return -1; // TODO error code
     }
 
     // Add New Entry to database
@@ -80,9 +73,8 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & val
     newEntry.id = curID;
     curID += 1;
     newEntry.parentID = docs.getDoc(docID);
-    if (key.length() < MAX_STRING_SIZE) {
-        newEntry.key = stringToInt(key.c_str());
-    } else {
+    int res = StringConversion::stringToInt(newEntry.key, key);
+    if (res != 0) {
         return -1; // TODO error code
     }
     newEntry.valType = type;
@@ -104,7 +96,7 @@ void GPU_NOSQL_DB::setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & 
     } else if (type == GPUDB_CHAR) {
         entry.data.c = value.c;
     } else if (type == GPUDB_STR) {
-        entry.data.s = value.s;
+        memcpy(entry.data.s, value.s, sizeof(entry.data.s));
     } else {
         entry.data.bigVal = value.bigVal;
     }
@@ -136,15 +128,21 @@ int GPU_NOSQL_DB::newFilter(int docID) {
 int GPU_NOSQL_DB::addToFilter(int filterID, std::string key) {
     // Translate key into an Entry for a search
     Entry newEntry;
-    newEntry.key = stringToInt(key.c_str());
+    int res = StringConversion::stringToInt(newEntry.key, key);
+    if (res != 0) {
+        return -1; // TODO error code
+    }
     // Add new entry to given filter
-    return filters.addToFilter(filterID, newEntry, KEY_ONLY);
+    return filters.addToFilter(filterID, newEntry, KEY_ONLY); // TODO check error code
 }
 
 int GPU_NOSQL_DB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type & type, GPUDB_COMP comp) {
     // Translate key and value into an Entry for a search
     Entry newEntry;
-    newEntry.key = stringToInt(key.c_str());
+    int res = StringConversion::stringToInt(newEntry.key, key);
+    if (res != 0) {
+        return -1; // TODO error code
+    }
     setEntryVal(newEntry, value, type);
     // Add new entry to given filter
     return filters.addToFilter(filterID, newEntry, comp);
@@ -181,7 +179,7 @@ GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
     GPUDB_QueryResult userDoc;
 
     ResultKV newKV;
-    newKV.key = intToString(resultDoc.kvPair.key);
+    newKV.key = StringConversion::intToString(resultDoc.kvPair.key);
     newKV.type = resultDoc.kvPair.valType;
     newKV.value = dataToValue(resultDoc.kvPair.data, newKV.type);
     userDoc.kv = &newKV;
@@ -208,7 +206,7 @@ GPUDB_Value GPU_NOSQL_DB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
     } else if (type == GPUDB_CHAR) {
         v.c = data.c;
     } else if (type == GPUDB_STR) {
-        v.s = data.s;
+        memcpy(v.s, data.s, sizeof(data.s));
     } else {
         v.bigVal = data.bigVal;
     }
@@ -232,7 +230,7 @@ int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & ty
     Entry revisedEntry;
     revisedEntry.parentID = oldEntry.parentID;
     revisedEntry.id = oldEntry.id;
-    revisedEntry.key = oldEntry.key;
+    memcpy(revisedEntry.key, oldEntry.key, sizeof(revisedEntry.key));
     revisedEntry.valType = type;
     setEntryVal(revisedEntry, value, type);
 

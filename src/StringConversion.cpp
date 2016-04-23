@@ -3,17 +3,37 @@
 //
 
 #include "StringConversion.hpp"
+#include "presets.hpp"
+#include <string>
+#include <string.h>
 
 using namespace GPUDB;
 
-long long int * stringToInt(char *string) {
-    long long int res[STRING_SIZE_INT];
-    // TODO conversion
-    return &res;
+int StringConversion::stringToInt(long long int *dest, const std::string & src) {
+    if (src.size() >= MAX_STRING_SIZE) {
+        return -1; // TODO error code
+    }
+
+    union TempConverter {
+        char from[MAX_STRING_SIZE];
+        long long int to[STRING_SIZE_INT];
+    };
+
+    TempConverter converter;
+    memcpy(converter.from, src.c_str(), sizeof(converter.from));
+    memcpy(dest, converter.to, sizeof(converter.to));
+
+    return 0;
 }
 
-char * intToString(long long int * str) {
-    char res[MAX_STRING_SIZE];
-    // TODO conversion
-    return &res;
+std::string StringConversion::intToString(const long long int *src) {
+    union TempConverter {
+        char to[MAX_STRING_SIZE];
+        long long int from[STRING_SIZE_INT];
+    };
+
+    TempConverter converter;
+    memcpy(converter.from, src, sizeof(converter.from));
+
+    return std::string(converter.to);
 }

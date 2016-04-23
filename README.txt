@@ -4,12 +4,18 @@ Adrian Work:
 API Work
     Error Code Documentation: 15
 
-To Discuss / Work On:
-    C++ Help
-        Constructors??
-    Key Type / Key Data Conversion
-    GetDocument - Why returning arraylist - is the result always a singel doc? When isn't it? Use case?
-        Handle/recheck those cases
+Current Work:
+    Adrian:
+        Handle/recheck getDocs
+        Test API and Time
+        Error Codes
+        Readme for Use
+    Ben:
+        Formal Efficiency Math on Driver
+        Powerpoint Structure / Basics
+        Extras
+            Get Rid of Buffer
+
 
 Work Schedule
 
