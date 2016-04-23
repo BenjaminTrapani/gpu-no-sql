@@ -6,7 +6,7 @@
 #define GPU_NO_SQL_FILTERSET_HPP
 #include <vector>
 #include "Entry.hpp"
-#include "Filter.h"
+#include "Filter.hpp"
 namespace GPUDB {
     typedef class FilterGroup {
     public:

@@ -1,11 +1,11 @@
 //
-// Created by Benjamin Trapani on 4/19/16.
+// Driver tests
 //
 
 #include "gpudbdrivertest.hpp"
 #include "gpudbdriver.hpp"
-#include "EntryUtils.h"
-#include "Filter.h"
+#include "EntryUtils.hpp"
+#include "Filter.hpp"
 
 using namespace GPUDB;
 
@@ -15,20 +15,20 @@ void GPUDBDriverTest::runTests(){
     Doc coreDoc;
     Entry lastEntry;
     Entry realLastEntry;
-    for(unsigned int i = 0; i < driver.getTableSize()-3; i++){
+    for (unsigned int i = 0; i < driver.getTableSize()-3; i++) {
         Entry anEntry;
         anEntry.data.bigVal=0;
         anEntry.valType = GPUDB_BGV;
         EntryUtils::assignKeyToEntry(anEntry, i);
         anEntry.id = i;
         Doc * perm = coreDoc.addChild(anEntry);
-        if(i == 3){
+        if(i == 3) {
             lastEntry.valType = GPUDB_BGV;
             lastEntry.data.bigVal = 1;
             EntryUtils::assignKeyToEntry(lastEntry, 10);
             lastEntry.parentID = 3;
             perm->children.push_back(lastEntry);
-        }else if(i == 6){
+        } else if (i == 6) {
             realLastEntry.valType = GPUDB_BGV;
             realLastEntry.id = 51;
             realLastEntry.data.bigVal = 1;
@@ -70,7 +70,7 @@ void GPUDBDriverTest::runTests(){
     float diff1 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("device multi-filter query latency = %fms\n", diff1);
 
-    for(std::vector<Doc>::iterator iter = hostqueryResult.begin(); iter != hostqueryResult.end(); ++iter){
+    for(std::vector<Doc>::iterator iter = hostqueryResult.begin(); iter != hostqueryResult.end(); ++iter) {
         printf("Doc id = %llu\n", iter->kvPair.id);
         for(std::list<Doc>::iterator nestedIter = iter->children.begin(); nestedIter != iter->children.end();
             ++nestedIter){
@@ -134,7 +134,7 @@ void GPUDBDriverTest::runDeepNestingTests(){
         root.kvPair.id = i;
         root.kvPair.parentID = 0;
         Doc * curParent = &root;
-        for(int j = 1; j < 16; j++){
+        for (int j = 1; j < 16; j++) {
             Entry curVal;
             EntryUtils::assignKeyToEntry(curVal, i + j);
             curVal.valType = GPUDB_BGV;
@@ -174,7 +174,7 @@ void GPUDBDriverTest::runDeepNestingTests(){
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("Deep filter took %fms\n", diff);
     printf("Num results = %i\n", result.size());
-    for(std::vector<Doc>::iterator iter = result.begin(); iter != result.end(); ++iter){
+    for (std::vector<Doc>::iterator iter = result.begin(); iter != result.end(); ++iter) {
         printf(iter->toString().c_str());
     }
 
