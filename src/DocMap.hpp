@@ -24,7 +24,7 @@ public:
     // return the paths vector
     std::vector<std::string> getPath(int docID);
     // Get the filter set to search for this doc
-    unsigned long long int getFilterSet(int docID);
+    FilterSet getFilterSet(int docID);
     // Removes the external id from the mappings and returns an exit code
     int removeDoc(int docID);
 private:

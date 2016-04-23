@@ -68,13 +68,13 @@ int GPU_NOSQL_DB::newDoc(int docID, std::string key) {
     return newDocID;
 }
 
-int GPU_NOSQL_DB::addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type) {
+int GPU_NOSQL_DB::addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
     int res = addtoDocNoSync(docID, key, value, type); // TODO handle error code
     driver.syncCreates();
     retun res;
 }
 
-int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type) {
+int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
     // Create a new Entry
     Entry newEntry;
     newEntry.id = curID;
@@ -96,7 +96,7 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & val
     return 0;
 }
 
-void GPU_NOSQL_DB::setEntryVal(Entry *entry, GPUDB_Value & value, GPUDB_Type type) {
+void GPU_NOSQL_DB::setEntryVal(Entry *entry, GPUDB_Value & value, GPUDB_Type & type) {
     entry.data.bigVal = 0;
     if (type == GPUDB_BLN) {
         entry->data->b = value.b;
@@ -113,8 +113,7 @@ void GPU_NOSQL_DB::setEntryVal(Entry *entry, GPUDB_Value & value, GPUDB_Type typ
     }
 }
 
-int GPU_NOSQL_DB::batchAdd(int docID, std::vector<std::string> & keys, std::vector<std::string> & values,
-                           std::vector<GPUDB_Type> types) {
+int GPU_NOSQL_DB::batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> & types) {
 
     int keySize = keys.size();
     if (keySize != values.size() && keySize != types.size()) {
@@ -145,7 +144,7 @@ int GPU_NOSQL_DB::addToFilter(int filterID, std::string key) {
     return filters.addToFilter(filterID, newEntry, KEY_ONLY);
 }
 
-int GPU_NOSQL_DB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type type, GPUDB_COMP comp) {
+int GPU_NOSQL_DB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type & type, GPUDB_COMP comp) {
     // Translate key and value into an Entry for a search
     Entry newEntry;
     newEntry.key = stringToInt(key.c_str());
@@ -176,13 +175,13 @@ GPUDB_QueryResult GPU_NOSQL_DB::query(int filterID) {
 
 GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
     // Set up the parent doc
-    GPUDB_QueryResult resultDoc;
+    GPUDB_QueryResult userDoc;
 
     ResultKV newKV;
     newKV.key = intToString(resultDoc.kvPair.key);
     newKV.type = resultDoc.kvPair.valType;
     newKV.value = dataToValue(resultDoc.kvPair.data, newKV.type);
-    resultDoc.kvPair = resultDoc.kvPair;
+    userDoc.kvPair = resultDoc.kvPair;
 
     // Handle the children
     if (!resultDoc.children.empty()) {
@@ -191,7 +190,7 @@ GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
         }
     }
 
-    return resultDoc;
+    return userDoc;
 }
 
 GPUDB_Value GPU_NOSQL_DB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
@@ -216,7 +215,7 @@ GPUDB_Value GPU_NOSQL_DB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
 // ********************************************************************************
 // Updating
 // must give a filter that does not hit a document
-int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type) {
+int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type) {
     // Get Matching Entry
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
 
