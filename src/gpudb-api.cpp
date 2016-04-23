@@ -6,6 +6,7 @@
 #include "stdio.h"
 #include <cstdio>
 #include "presets.hpp"
+#include "StringConversion.hpp"
 
 using namespace GPUDB;
 
@@ -51,7 +52,7 @@ int GPU_NOSQL_DB::newDoc(int docID, std::string key) {
     curID += 1;
     newEntry.valType = GPUDB_DOC;
     if (key.length() < MAX_STRING_SIZE) {
-        strcpy(newEntry.key, key.c_str());
+        newEntry.key = stringToInt(key.c_str());
     } else {
         return -1; // TODO error code
     }
@@ -80,7 +81,7 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & val
     curID += 1;
     newEntry.parentID = docs.getDoc(docID);
     if (key.length() < MAX_STRING_SIZE) {
-        strcpy(newEntry.key, key.c_str());
+        newEntry.key = stringToInt(key.c_str());
     } else {
         return -1; // TODO error code
     }
@@ -139,7 +140,7 @@ int GPU_NOSQL_DB::newFilter(int docID) {
 int GPU_NOSQL_DB::addToFilter(int filterID, std::string key) {
     // Translate key into an Entry for a search
     Entry newEntry;
-    newEntry.key = key.c_str();
+    newEntry.key = stringToInt(key.c_str());
     // Add new entry to given filter
     return filters.addToFilter(filterID, newEntry, KEY_ONLY);
 }
@@ -147,7 +148,7 @@ int GPU_NOSQL_DB::addToFilter(int filterID, std::string key) {
 int GPU_NOSQL_DB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type type, GPUDB_COMP comp) {
     // Translate key and value into an Entry for a search
     Entry newEntry;
-    newEntry.key = key.c_str();
+    newEntry.key = stringToInt(key.c_str());
     setEntryVal(&newEntry, value, type);
     // Add new entry to given filter
     return filters.addToFilter(filterID, newEntry, comp);
@@ -178,7 +179,7 @@ GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
     GPUDB_QueryResult resultDoc;
 
     ResultKV newKV;
-    newKV.key = resultDoc.kvPair.key;
+    newKV.key = intToString(resultDoc.kvPair.key);
     newKV.type = resultDoc.kvPair.valType;
     newKV.value = dataToValue(resultDoc.kvPair.data, newKV.type);
     resultDoc.kvPair = resultDoc.kvPair;

@@ -10,6 +10,7 @@
 #include "FilterSet.hpp"
 #include "gpudbdriver.hpp"
 #include "presets.hpp"
+#include "StringConversion.hpp"
 
 using namespace GPUDB;
 
