@@ -186,7 +186,7 @@ GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
 
     // Handle the children
     if (!resultDoc.children.empty()) {
-        for (std::list<Entry>::iterator it = resultDoc.children.begin(); it != resultDoc.children.end(); it++) {
+        for (std::list<Doc>::iterator it = resultDoc.children.begin(); it != resultDoc.children.end(); it++) {
             GPUDB_QueryResult childResult = translateDoc(*it);
         }
     }
@@ -208,7 +208,7 @@ GPUDB_Value GPU_NOSQL_DB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
     } else if (type == GPUDB_STR) {
         v.s = data.s;
     } else {
-        v.bigVal = value.bigVal;
+        v.bigVal = data.bigVal;
     }
     return v;
 }
@@ -218,7 +218,7 @@ GPUDB_Value GPU_NOSQL_DB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
 // must give a filter that does not hit a document
 int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type) {
     // Get Matching Entry
-    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(fitlerID));
+    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
 
     // Check that it is not a doc
     Entry oldEntry = resultDoc.kvPair;
@@ -248,10 +248,10 @@ int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type
 
 int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
     // Get Matching Docs
-    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(fitlerID));
+    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
     // flatten doc into single vector
     std::list<Entry> allEntries;
-    flattenDoc(resultDoc &allEntries);
+    flattenDoc(resultDoc, &allEntries);
 
     for (std::list<Entry>::iterator it = allEntries.begin(); it != allEntries.end(); it++) {
         driver.deleteBy(*it);
@@ -260,7 +260,7 @@ int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
     return -1; // TODO error codes for entire function
 }
 
-void GPU_NOSQL_DB::flattenDoc(Doc d, std::list<Entry> targetEntryList) {
+void GPU_NOSQL_DB::flattenDoc(Doc d, std::list<Entry> * targetEntryList) {
     targetEntryList.push_back(d.kvPair);
     if (!d.children.empty()) {
         for (std::list<Doc>::iterator it = d.children.begin(); it != d.children.end(); it++) {
