@@ -2,9 +2,14 @@ Work Needed Summary
 
 Adrian Work:
 API Work
-    StringConversion
-    Debugging - Try to Compile this shit
     Error Code Documentation: 15
+
+To Discuss / Work On:
+    C++ Help
+        Constructors??
+    Key Type / Key Data Conversion
+    GetDocument - Why returning arraylist - is the result always a singel doc? When isn't it? Use case?
+        Handle/recheck those cases
 
 Work Schedule
 
