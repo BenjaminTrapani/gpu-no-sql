@@ -6,34 +6,43 @@
 
 FilterMap::FilterMap(GPUDBDriver *d, DocMap *m) {
     // Set Up Open Filters
-    openSpots.reserve(1000);
-    for (int i = 999; i > 1; i--) {
-        openSpots.push_back(i);
+    for (int i = 999; i >= 0; i--) {
+        openSpots.push_front(i);
     }
     // Initialize Pointers to Map / Driver
-    documentMap = m;
-    driver = d;
+    //documentMap = m;
+    //driver = d;
 }
 
 int FilterMap::newFilter(FilterSet sourceDocFilter) {
-    return -1; // TODO
+    int newID = openSpots.front();
+    filters[newID] = sourceDocFilter;
+    return newID;
 }
 
 FilterSet FilterMap::getFilter(int filterID) {
-    FilterSet s;
-    return s; // TODO
+    FilterSet curFilters = filters[filterID];
+    curFilters.push_back(curGroups[filterID]);
+    return curFilters;
 }
 
-int FilterMap::addToFilter(int filterID, Entry e) {
-    return -1; // TODO
+int FilterMap::addToFilter(int filterID, Entry e, GPUDB_COMP comp) {
+    Filter newFilter;
+    newFilter.entry = e;
+    newFilter.comparator = comp;
+    curGroups[filterID].group.push_back(newFilter);
 }
 
 int FilterMap::advanceFilter(int filterID) {
-    return -1; // TODO
+    curFilters.push_back(curGroups[filterID]);
+    FilterGroup newGroup;
+    curGroups[filterID] = newGroup;
+    return 0;
 }
 
 int FilterMap::removeFilter(int filterID) {
-    return -1; // TODO
+    openSpots.push_back(docID);
+    return 0;
 }
 
 

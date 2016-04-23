@@ -5,7 +5,7 @@
 #ifndef GPU_NO_SQL_DOCMAP_H
 #define GPU_NO_SQL_DOCMAP_H
 
-#include <vector>
+#include <list>
 #include <string>
 #include "FilterSet.hpp"
 #include "gpudbdriver.hpp"
@@ -28,7 +28,7 @@ public:
 private:
     GPUDBDriver *driver;
 
-    std::vector<int> openSpots; // TODO switch to list
+    std::list<int> openSpots;
 
     unsigned long long int docs[1000];
     FilterSet filters[1000];

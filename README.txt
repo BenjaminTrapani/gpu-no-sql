@@ -3,11 +3,10 @@ Work Needed Summmary
 Adrian Work:
 API Work
     FilterMap implementation
-        switch the open spots vector to a list
+        Check if out of bounds before accessing
     DocMap implementation
+        Check if out of bounds before accessing
         Implement filter creation with comparators Driver expansion
-        Better return id once used using a random swap
-        Switch the open spots vector to a list
     Detailed Implementations: 4
         addtoFilter() - 2
         Populate Result Format in query() - 2
@@ -17,17 +16,6 @@ API Work
     Extract Magic Numbers into Constants and use on construction
     Error Code Documentation: 10
 
-Ben Work:
-    Driver Changes
-        Delete
-            Take a list of entries and delete all of them - makes it batch, will run fast on all deletes of all sizes
-        Comparators
-            Add a Comparator to each FilterGroup
-                NEEDED ASAP to implement many features correctly
-                Includes KEY_ONLY and VAL_ONLY
-    Doc Changes
-        Make the children a list instead of a vector
-
 Work Schedule
 
 Adrian:
@@ -36,7 +24,6 @@ Saturday: API Finalizations, Code Documentation and Cleanup
 Sunday: Cleanup Finalizations, Powerpoint Design
 
 Ben:
-Friday: Driver Changes and Doc Update
 Saturday: Write Demo Tests
 Sunday: Finalize Tests, Measure Performance
 

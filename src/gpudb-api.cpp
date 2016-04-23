@@ -149,7 +149,7 @@ int GPU_NOSQL_DB::addToFilter(int filterID, std::vector<std::string> key, GPUDB_
     // Translate key and value into an Entry for a search
     Entry newEntry;
     // Add new entry to given filter
-    return filters.addToFilter(filterID, newEntry);
+    return filters.addToFilter(filterID, newEntry, comp); // TODO properly use comp here
 }
 
 int GPU_NOSQL_DB::advanceFilter(int filterID) {
