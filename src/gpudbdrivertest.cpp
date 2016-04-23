@@ -100,7 +100,7 @@ void GPUDBDriverTest::runTests(){
         }
     }
     t1 = clock();
-    driver.deleteAll(lastEntry);
+    driver.deleteBy(lastEntry);
     t2 = clock();
     float deleteDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
 

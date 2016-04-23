@@ -6,6 +6,10 @@
 
 using namespace GPUDB;
 
+DocMap::DocMap() {
+    // Empty
+}
+
 DocMap::DocMap(GPUDBDriver *d) {
     // Set Up Open Docs
     for (int i = 999; i > 0; i--) {
@@ -13,11 +17,11 @@ DocMap::DocMap(GPUDBDriver *d) {
     }
 
     // Set up root
-    std::vector<std::string> empty;
-    FilterSet empty;
+    std::vector<std::string> emptyStrings;
+    FilterSet emptyFilter;
     docs[0] = 0;
-    paths[0] = empty;
-    filters[0] = empty;
+    paths[0] = emptyStrings;
+    filters[0] = emptyFilter;
 
     // Set up driver pointer
     driver = d;
@@ -33,7 +37,7 @@ int DocMap::addDoc(std::vector <std::string> strings) {
     openSpots.pop_front();
 
     // Create filter set
-    FilterSet filters;
+    FilterSet newFilterSet;
     for (int i = 0; i < strings.size(); i += 1) {
         FilterGroup g;
 
@@ -41,9 +45,8 @@ int DocMap::addDoc(std::vector <std::string> strings) {
         Entry newEntry;
 
         newEntry.valType = GPUDB_DOC;
-        if (strings.at(i).size() < 16) {
-            newEntry.key = stringToInt(strings.at(i).c_str());
-        } else {
+        int res = StringConversion::stringToInt(newEntry.key, strings.at(i));
+        if (res != 0) {
             return -1; // TODO error code
         }
 
@@ -57,19 +60,19 @@ int DocMap::addDoc(std::vector <std::string> strings) {
 
         // If Last, Set as the result set
         if (i == strings.size() - 1) {
-            g.resultSet = true;
+            g.resultMember = true;
         } else {
-            g.resultSet = false;
+            g.resultMember = false;
         }
 
         // Add the group to the set
-        filters.push_back(g);
+        newFilterSet.push_back(g);
     }
 
     // Add it to filter set spot
-    docs[place] = filters;
+    filters[place] = newFilterSet;
     // get documentID and add it to doc spot
-    docs[place] = driver.getDocumentID(filters);
+    docs[place] = driver->getDocumentID(newFilterSet);
     // return the place
     return place;
 }
@@ -83,14 +86,14 @@ unsigned long long int DocMap::getDoc(int docID) {
 
 std::vector<std::string> DocMap::getPath(int docID) {
     if (!validID(docID)) {
-        return -1; // TODO error code
+        return std::vector<std::string>(0); // TODO error code
     }
     return paths[docID];
 }
 
 FilterSet DocMap::getFilterSet(int docID) {
     if (!validID(docID)) {
-        return -1; // TODO error code
+        return FilterSet(); // TODO error code
     }
     return filters[docID];
 }
@@ -108,5 +111,5 @@ int DocMap::removeDoc(int docID) {
 }
 
 bool DocMap::validID(int filterID) {
-    return filterID < maxResources && filterID >= 0;
+    return filterID < MAX_RESOURCES && filterID >= 0;
 }

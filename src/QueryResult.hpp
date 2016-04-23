@@ -12,7 +12,7 @@
 
 namespace GPUDB {
     typedef struct ResultKV {
-        char key[MAX_STRING_SIZE];
+        std::string key;
         GPUDB_Value value;
         GPUDB_Type type;
     };

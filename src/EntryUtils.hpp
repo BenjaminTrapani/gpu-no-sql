@@ -10,6 +10,7 @@
 #include <cstring>
 #include <stdio.h>
 #include <stdlib.h>
+#include "presets.hpp"
 #include "Entry.hpp"
 
 namespace GPUDB {
@@ -17,9 +18,9 @@ namespace GPUDB {
     public:
         template<class T>
         static void assignKeyToEntry(Entry &entry, const T &val) {
-            union TempUnion{
+            union TempUnion {
                 T valToFill;
-                long long int resultBuf[Entry::KeyLen];
+                long long int resultBuf[STRING_SIZE_INT];
             };
             TempUnion aUnion;
             memset(aUnion.resultBuf, 0, sizeof(aUnion.resultBuf));

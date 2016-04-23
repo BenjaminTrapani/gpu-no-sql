@@ -6,8 +6,10 @@ INCLUDE_DIRS=-I../deps/thrust/thrust/ -I../deps/cub/ -I.
 
 GPUDBLIB_PATH=/home/gpu/gpudb/gpu-no-sql/src/
 
+TOPAPI_SOURCES = gpudbdriver.cu gpudb-api.cpp DocMap.cpp FilterMap.cpp StringConversion.cpp
+
 gpudb:
-	$(NVCC) -g gpudbdriver.cu gpudbdrivertest.cpp --disable-warnings -l $(LIBS) -o $@ $(INCLUDE_DIRS)
+	$(NVCC) -O3 gpudbdriver.cu gpudbdrivertest.cpp --disable-warnings -l $(LIBS) -o $@ $(INCLUDE_DIRS)
 
 clean:
 	rm -rf gpudb
@@ -16,7 +18,7 @@ check: gpudb
 	./gpudb
 
 topapi:
-	$(NVCC) -g gpudbdriver.cu gpudb-api.cpp --disable-warnings -l $(LIBS) -o $@ $(INCLUDE_DIRS)
+	$(NVCC) -g $(TOPAPI_SOURCES) --disable-warnings -l $(LIBS) -o $@ $(INCLUDE_DIRS)
 
 topcheck: topapi
 	./topapi

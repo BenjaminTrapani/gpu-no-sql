@@ -42,7 +42,7 @@ int FilterMap::advanceFilter(int filterID) {
     if (!validID(filterID)) {
         return -1; // TODO error code
     }
-    curFilters.push_back(curGroups[filterID]);
+    filters[filterID].push_back(curGroups[filterID]);
     FilterGroup newGroup;
     curGroups[filterID] = newGroup;
     return 0;
@@ -52,12 +52,12 @@ int FilterMap::removeFilter(int filterID) {
     if (!validID(filterID)) {
         return -1; // TODO error code
     }
-    openSpots.push_back(docID);
+    openSpots.push_back(filterID);
     return 0;
 }
 
 bool FilterMap::validID(int filterID) {
-    return filterID < maxResources && filterID >= 0;
+    return filterID < MAX_RESOURCES && filterID >= 0;
 }
 
 

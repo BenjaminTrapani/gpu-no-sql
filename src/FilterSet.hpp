@@ -7,8 +7,9 @@
 #include <vector>
 #include "Entry.hpp"
 #include "Filter.hpp"
+
 namespace GPUDB {
-    typedef class FilterGroup {
+    class FilterGroup {
     public:
         FilterGroup():resultMember(false){}
 

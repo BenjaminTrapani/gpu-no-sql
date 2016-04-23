@@ -16,6 +16,7 @@ using namespace GPUDB;
 
 class DocMap {
 public:
+    DocMap();
     DocMap(GPUDBDriver *d);
     // Returns the external id for the given doc path
     int addDoc(std::vector<std::string> strings);

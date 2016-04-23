@@ -7,6 +7,8 @@
 
 #endif //GPU_NO_SQL_TYPESVALUES_H
 
+#include "presets.hpp"
+
 namespace GPUDB {
     enum GPUDB_Type {
         GPUDB_BLN,
@@ -23,7 +25,7 @@ namespace GPUDB {
         int n;
         float f;
         char c;
-        char s[16];
+        char s[MAX_STRING_SIZE/2];
         long long int bigVal;
     };
 
@@ -32,7 +34,7 @@ namespace GPUDB {
         int n;
         float f;
         char c;
-        char s[16];
+        char s[MAX_STRING_SIZE/2];
         long long int bigVal;
     };
 }
