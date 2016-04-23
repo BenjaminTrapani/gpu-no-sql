@@ -163,7 +163,7 @@ int GPU_NOSQL_DB::deleteFilter(int filterID) {
 
 std::vector<GPUDB_QueryResult> GPU_NOSQL_DB::query(int filterID) {
     // Get the resulting document
-    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
+    std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
 
     std::vector<GPUDB_QueryResult> allResults;
 
@@ -184,7 +184,7 @@ GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
     newKV.key = intToString(resultDoc.kvPair.key);
     newKV.type = resultDoc.kvPair.valType;
     newKV.value = dataToValue(resultDoc.kvPair.data, newKV.type);
-    userDoc.kv = newKV;
+    userDoc.kv = &newKV;
 
     // Handle the children
     if (!resultDoc.children.empty()) {
