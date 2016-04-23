@@ -2,15 +2,12 @@ Work Needed Summary
 
 Adrian Work:
 API Work
-    Detailed Implementations: 4
-        addtoFilter() - 2
+    Detailed Implementations: 3
         Populate Result Format in query() - 2
             Create Query Type
-        flattenDoc() - 1
     Ben Changes Adaptation
         Key Type
     Debugging - Try to Compile this shit
-    Extract Magic Numbers into Constants and use on construction
     Error Code Documentation: 15
 
 Work Schedule

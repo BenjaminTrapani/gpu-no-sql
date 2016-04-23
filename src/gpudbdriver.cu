@@ -279,12 +279,12 @@ void GPUDBDriver::buildResultsBottomUp(std::vector<Doc> & result, const unsigned
                                                               GetElementWithChild(thrust::raw_pointer_cast(&(*childIter))));
 
         Doc * lastValidParent;
-        if(curHostChild.isResultMember){
+        if (curHostChild.isResultMember) {
             lastValidParent = &docIDMap[curHostChild.id];
-        }else{
+        } else {
             lastValidParent = 0;
         }
-        while(parentIter != deviceEntries.end()){
+        while (parentIter != deviceEntries.end()) {
             Entry hostChild = *childIter;
             Entry hostParent = *parentIter;
 

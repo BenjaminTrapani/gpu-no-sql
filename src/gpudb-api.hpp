@@ -7,12 +7,14 @@
 
 #include <string>
 #include <vector>
+#include <list>
 #include "Entry.hpp"
 #include "QueryResult.hpp"
 #include "ComparatorType.hpp"
 #include "gpudbdriver.hpp"
 #include "DocMap.hpp"
 #include "FilterMap.hpp"
+#include "presets.hpp"
 
 using namespace GPUDB;
 
@@ -67,7 +69,7 @@ private:
 
     void setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type type);
     int addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type);
-    std::vector<Doc> flattenDoc(Doc d, bool start);
+    std::vector<Entry> flattenDoc(Doc d);
 };
 
 

@@ -50,7 +50,7 @@ int GPU_NOSQL_DB::newDoc(int docID, std::string key) {
     newEntry.id = curID;
     curID += 1;
     newEntry.valType = GPUDB_DOC;
-    if (key.length() < 16) {
+    if (key.length() < MAX_STRING_SIZE) {
         strcpy(newEntry.key, key.c_str());
     } else {
         return -1; // TODO error code
@@ -79,7 +79,7 @@ int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & val
     newEntry.id = curID;
     curID += 1;
     newEntry.parentID = docs.getDoc(docID);
-    if (key.length() < 16) {
+    if (key.length() < MAX_STRING_SIZE) {
         strcpy(newEntry.key, key.c_str());
     } else {
         return -1; // TODO error code
@@ -205,11 +205,6 @@ int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type type
     return 0; // TODO error code for success
 }
 
-std::vector<Doc> GPU_NOSQL_DB::flattenDoc(Doc d, bool start) {
-    std::vector<Doc> resultDoc;
-    return resultDoc; // TODO
-}
-
 // ********************************************************************************
 // Deleting
 
@@ -217,17 +212,28 @@ int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
     // Get Matching Docs
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(fitlerID));
     // flatten doc into single vector
-    std::vector<Entry> allEntries = flattenDoc(resultDoc, true);
+    std::list<Entry> allEntries;
+    flattenDoc(resultDoc &allEntries);
 
     // TODO need driver changes
     // implementation - delete a list of entries, not just a single entry
     // goal: batch deletes, much more efficient
     // driver.deleteAll(allEntries);
-    for (std::vector<Entry>::iterator it = allEntries.begin(); it != allEntries.end(); it++) {
+    for (std::list<Entry>::iterator it = allEntries.begin(); it != allEntries.end(); it++) {
         driver.deleteAll(*it);
     }
 
     return -1; // TODO error codes for entire function
+}
+
+void GPU_NOSQL_DB::flattenDoc(Doc d, std::list<Entry> targetEntryList) {
+    targetEntryList.push_back(d.kvPair);
+    if (!d.children.empty()) {
+        for (std::list<Doc>::iterator it = d.children.begin(); it != d.children.end(); it++) {
+            flattenDoc(*it, targetEntryList);
+        }
+    }
+    return;
 }
 
 // ********************************************************************************

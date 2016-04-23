@@ -31,9 +31,9 @@ private:
 
     std::list<int> openSpots;
 
-    unsigned long long int docs[1000];
-    FilterSet filters[1000];
-    std::vector<std::string> paths[1000];
+    unsigned long long int docs[MAX_RESOURCES];
+    FilterSet filters[MAX_RESOURCES];
+    std::vector<std::string> paths[MAX_RESOURCES];
 
     bool validID(int filterID);
 };

@@ -7,6 +7,7 @@
 
 using namespace GPUDB;
 
-int maxResources = 1000;
+const int MAX_RESOURCES = 1000;
+const int MAX_STRING_SIZE = 16;
 
 #endif // SRC_PRESETS_H
