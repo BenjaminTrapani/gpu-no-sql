@@ -1,11 +1,11 @@
 //
-// Created by Benjamin Trapani on 4/22/16.
+// Comparators for Entries
 //
 
 #ifndef GPU_NO_SQL_ENTRYCOMPARATORS_H
 #define GPU_NO_SQL_ENTRYCOMPARATORS_H
 
-#include "Filter.h"
+#include "Filter.hpp"
 
 namespace GPUDB{
     struct IsPartialEntryMatch : thrust::unary_function<Entry, bool> {

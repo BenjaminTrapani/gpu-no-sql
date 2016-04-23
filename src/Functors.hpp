@@ -5,7 +5,7 @@
 #ifndef GPU_NO_SQL_FUNCTORS_H
 #define GPU_NO_SQL_FUNCTORS_H
 
-#include "EntryComparators.h"
+#include "EntryComparators.hpp"
 
 namespace GPUDB {
 

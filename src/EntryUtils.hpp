@@ -1,5 +1,5 @@
 //
-// Created by Benjamin Trapani on 4/22/16.
+// Utilities for Entries
 //
 
 #ifndef GPU_NO_SQL_ENTRYUTILS_H

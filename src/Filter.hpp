@@ -1,5 +1,5 @@
 //
-// Created by Benjamin Trapani on 4/22/16.
+// Filter with Entry and Comparator
 //
 
 #ifndef GPU_NO_SQL_FILTER_H
