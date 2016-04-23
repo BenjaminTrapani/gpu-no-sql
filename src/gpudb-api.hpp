@@ -67,11 +67,13 @@ private:
 
     unsigned long long int curID;
 
-    void setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type type);
     int addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type type);
+
+    void setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type type);
+    GPUDB_Value dataToValue(GPUDB_Data data, GPUDB_Type type);
+
+    GPUDB_QueryResult translateDoc(Doc resultDoc);
     std::vector<Entry> flattenDoc(Doc d);
 };
-
-
 
 #endif //GPU_NO_SQL_GPUDB_API_H
