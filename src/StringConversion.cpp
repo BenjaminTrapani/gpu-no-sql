@@ -9,9 +9,10 @@
 
 using namespace GPUDB;
 
+// -1 - input string too big
 int StringConversion::stringToInt(long long int *dest, const std::string & src) {
     if (src.size() >= MAX_STRING_SIZE) {
-        return -1; // TODO error code
+        return -1; // input string too big
     }
 
     union TempConverter {
