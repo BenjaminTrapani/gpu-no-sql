@@ -1,14 +1,5 @@
 GPUDB API
 
-0 - success
-1 - no space
-2 - invalid doc reference
-3 - lists are not of equal size
-4 - cannot remove root
-5 - Invalid Key
-6 - invalid filter reference
-9 - bad path to document
-
 int getRootDoc()
     Returns the root doc ID (always 0)
 
@@ -54,32 +45,44 @@ int addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type &
     Takes a filter reference, a key, a value, a type, and a comparator
     Adds this to the current filter level
     Returns a success or error code
-        Errors: 0,
+        Errors: 0, -5, -6
 
+int advanceFilter(int filterID)
+    Take a filter reference
+    Move the filter to the next level
+        Errors: -6
 
+int deleteFilter(int filterID)
+    Take a filter reference
+    Remove the filter reference
+        Errors: -6
 
-// Move the filter to the next level
-int advanceFilter(int filterID);
-// Delete the current filter
-int deleteFilter(int filterID);
+std::vector<GPUDB_QueryResult> query(int filterID)
+    Run the given filter and get the result
 
-// Querying
-std::vector<GPUDB_QueryResult> query(int filterID);
+int updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type)
+    takes a filter reference, a value to update to, and an updated type
+    updates the given KV, error's if the filter returns a document
+        Errors: -7
 
-// Updating
-// Returns an error/success code
-int updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type);
+int deleteFromDoc(int filterID)
+    takes a filter reference
+    runs the filter and deletes all results and children of any results
 
-// Deleting
-// Returns an error/success code
-int deleteFromDoc(int filterID);
-
+////////////////////////////////////////////////////////////
+Error Codes:
+0 - success
+1 - no space
+2 - invalid doc reference
+3 - lists are not of equal size
+4 - cannot remove root
+5 - Invalid Key
+6 - invalid filter reference
+7 - filter returns a document when it should not
+9 - bad path to document
+////////////////////////////////////////////////////////////
 
 Work Needed Summary
-
-Adrian Work:
-API Work
-    Error Code Documentation: 15
 
 Current Work:
     Adrian:
@@ -93,16 +96,23 @@ Current Work:
         Extras
             Get Rid of Buffer
 
+Next Steps
+    Resource Management
+        Safer Reference Deletes
+        Better Validity Checks
+    Wildcard Doc Filter
+    And and Or Type in FilterGroups
+        User Accessible
 
 Work Schedule
 
 Adrian:
-Saturday: API Finalizations, Code Documentation and Cleanup
-Sunday: Cleanup Finalizations, Powerpoint Design
+Sunday: Cleanup Finalizations, Error Codes, Tests
+Monday: Tests Finalizations, Finalize Powerpoint
 
 Ben:
-Saturday: Write Demo Tests
-Sunday: Finalize Tests, Measure Performance
+Sunday: Powerpoint Work, Measure Performance
+Monday: Finalize Powerpoint
 
 Both:
 Saturday Meeting: Run Tests, Plan

@@ -44,9 +44,10 @@ int FilterMap::addToFilter(int filterID, Entry e, GPUDB_COMP comp) {
     return 0;
 }
 
+// -6 - invalid filter reference
 int FilterMap::advanceFilter(int filterID) {
     if (!validID(filterID)) {
-        return -1; // TODO error code
+        return -6; // invalid filter reference
     }
     filters[filterID].push_back(curGroups[filterID]);
     FilterGroup newGroup;
@@ -56,9 +57,10 @@ int FilterMap::advanceFilter(int filterID) {
 
 int FilterMap::removeFilter(int filterID) {
     if (!validID(filterID)) {
-        return -1; // TODO error code
+        return -6; // invalid filter reference
     }
     openSpots.push_back(filterID);
+    // TODO clear old data?
     return 0;
 }
 
