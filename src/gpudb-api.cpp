@@ -2,6 +2,16 @@
 // User Level API Implementation
 //
 
+// Error Codes:
+// 0 - success
+// 1 - no space
+// 2 - invalid doc reference
+// 3 - lists are not of equal size
+// 4 - cannot remove root
+// 5 - Invalid Key
+// 6 - invalid filter reference
+// 9 - bad path to document
+
 #include "gpudb-api.hpp"
 #include "stdio.h"
 #include <cstdio>
@@ -10,23 +20,25 @@
 
 using namespace GPUDB;
 
-GPU_NOSQL_DB::GPU_NOSQL_DB():driver(), docs(&driver), filters(), curID(0) {
+GPUDB::GPUDB():driver(), docs(&driver), filters(), curID(0) {
     // empty
 }
 
 // ********************************************************************************
 // Document Identification
 
-int GPU_NOSQL_DB::getRootDoc() {
+int GPUDB::getRootDoc() {
     return 0;
 }
 
-// Returns -1 when not enough space, otherwise returns the docID
-int GPU_NOSQL_DB::getDoc(std::vector<std::string> & strings) {
+// On Success: Returns an int from 0 to MAX_RESOURCES-1
+// Errors: -1, -5, -9
+int GPUDB::getDoc(std::vector<std::string> & strings) {
     return docs.addDoc(strings);
 }
 
-int GPU_NOSQL_DB::deleteDocRef(int docID) {
+// Errors: 0, -2, -4
+int GPUDB::deleteDocRef(int docID) {
     return docs.removeDoc(docID);
 }
 
@@ -34,58 +46,72 @@ int GPU_NOSQL_DB::deleteDocRef(int docID) {
 // Creation
 
 // Creates a document inside the given doc from ID with key "key"
-int GPU_NOSQL_DB::newDoc(int docID, std::string & key) {
+// Errors: -1, -2, -5, -9
+int GPUDB::newDoc(int docID, std::string & key) {
     // Create the new path
     std::vector<std::string> newPath = docs.getPath(docID);
+    if (docID != 0 && newPath.empty()) {
+        return -2; // Invalid Doc reference
+    }
     newPath.push_back(key);
 
-    // Create the actual new doc
+    // Get a docID for the path
+    int newDocID = getDoc(newPath);
+    if (newDocID < 0) {
+        return newDocID; // bad path, no space, or invalid added key
+    }
+
+    // Create the actual new doc entry
     unsigned long long int parentID = docs.getDoc(docID);
     Entry newEntry;
     newEntry.id = curID;
     curID += 1;
     newEntry.valType = GPUDB_DOC;
-    int res = StringConversion::stringToInt(newEntry.key, key);
-    if (res != 0) {
-       return -1; // TODO error code
-    }
+    StringConversion::stringToInt(newEntry.key, key);
 
     // Add New Entry to database
     driver.create(newEntry);
     driver.syncCreates();
 
-    // Get a docID for the path
-    int newDocID = getDoc(newPath);
-
     // return the new doc ID
     return newDocID;
 }
 
-int GPU_NOSQL_DB::addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
-    int res = addToDocNoSync(docID, key, value, type); // TODO handle error code
+// adds to the given doc
+// Errors: 0, -2, -5
+int GPUDB::addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
+
+    int realDocID = docs.getDoc(docID);
+    if (realDocID == 0 && docID != 0) {
+        return -2; // bad document reference
+    }
+
+    int res = addToDocNoSync(realDocID, key, value, type);
     driver.syncCreates();
     return res;
 }
 
-int GPU_NOSQL_DB::addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
+// adds to the given doc with syncing
+// Errors: 0, -5
+int GPUDB::addToDocNoSync(unsigned long long int realDocID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
     // Create a new Entry
     Entry newEntry;
     newEntry.id = curID;
     curID += 1;
-    newEntry.parentID = docs.getDoc(docID);
+    newEntry.parentID = realDocID;
     int res = StringConversion::stringToInt(newEntry.key, key);
     if (res != 0) {
-        return -1; // TODO error code
+        return -5; // bad key
     }
     newEntry.valType = type;
     setEntryVal(newEntry, value, type);
 
-    driver.create(newEntry);
+    driver.create(newEntry); // TODO add error code in driver?
 
     return 0;
 }
 
-void GPU_NOSQL_DB::setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & type) {
+void GPUDB::setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & type) {
     entry.data.bigVal = 0;
     if (type == GPUDB_BLN) {
         entry.data.b = value.b;
@@ -102,16 +128,25 @@ void GPU_NOSQL_DB::setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & 
     }
 }
 
-int GPU_NOSQL_DB::batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> & types) {
+// Adds in bulk
+// Errors: 0, -2, -3
+// -X - invalid key on the -x+1000000 place
+long int GPUDB::batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> & types) {
+
+    int realDocID = docs.getDoc(docID);
+    if (realDocID == 0 && docID != 0) {
+        return -2; // bad document reference
+    }
 
     int keySize = keys.size();
     if (keySize != values.size() && keySize != types.size()) {
-        return -1; // TODO error code
+        return -3; // Lists are not of equal size
     }
+
     for (int i = 0; i < keySize; i += 1) {
-        int res = addToDocNoSync(docID, keys.at(i), values.at(i), types.at(i));
+        int res = addToDocNoSync(realDocID, keys.at(i), values.at(i), types.at(i));
         if (res != 0) {
-            return -i; // returns the negative of the value it fialed on - all other values are not processed
+            return -i - 1000000; // returns the negative of the value it failed on - all other values are not processed
         }
     }
     driver.syncCreates();
@@ -121,45 +156,52 @@ int GPU_NOSQL_DB::batchAdd(int docID, std::vector<std::string> & keys, std::vect
 // ********************************************************************************
 // Filter Creation
 
-int GPU_NOSQL_DB::newFilter(int docID) {
-    return filters.newFilter(docs.getFilterSet(docID));
+// Creates a new filter
+// Errors: -1, -2
+int GPUDB::newFilter(int docID) {
+    FilterSet docFilters = docs.getFilterSet(docID);
+    if (docID != 0 && docFilters.empty()) {
+        return -2; // Bad Document ID
+    }
+    return filters.newFilter();
 }
 
-int GPU_NOSQL_DB::addToFilter(int filterID, std::string key) {
+int GPUDB::addToFilter(int filterID, std::string key) {
+
     // Translate key into an Entry for a search
     Entry newEntry;
     int res = StringConversion::stringToInt(newEntry.key, key);
     if (res != 0) {
-        return -1; // TODO error code
+        return -5; // Invalid Key
     }
     // Add new entry to given filter
-    return filters.addToFilter(filterID, newEntry, KEY_ONLY); // TODO check error code
+    return filters.addToFilter(filterID, newEntry, KEY_ONLY);
 }
 
-int GPU_NOSQL_DB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type & type, GPUDB_COMP comp) {
+int GPUDB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type & type, GPUDB_COMP comp) {
     // Translate key and value into an Entry for a search
     Entry newEntry;
     int res = StringConversion::stringToInt(newEntry.key, key);
     if (res != 0) {
-        return -1; // TODO error code
+        return -5; // bad key
     }
     setEntryVal(newEntry, value, type);
     // Add new entry to given filter
     return filters.addToFilter(filterID, newEntry, comp);
 }
 
-int GPU_NOSQL_DB::advanceFilter(int filterID) {
+int GPUDB::advanceFilter(int filterID) {
     return filters.advanceFilter(filterID);
 }
 
-int GPU_NOSQL_DB::deleteFilter(int filterID) {
+int GPUDB::deleteFilter(int filterID) {
     return filters.removeFilter(filterID);
 }
 
 // ********************************************************************************
 // Querying
 
-std::vector<GPUDB_QueryResult> GPU_NOSQL_DB::query(int filterID) {
+std::vector<GPUDB_QueryResult> GPUDB::query(int filterID) {
     // Get the resulting document
     std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
 
@@ -174,7 +216,7 @@ std::vector<GPUDB_QueryResult> GPU_NOSQL_DB::query(int filterID) {
     return allResults;
 }
 
-GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
+GPUDB_QueryResult GPUDB::translateDoc(Doc resultDoc) {
     // Set up the parent doc
     GPUDB_QueryResult userDoc;
 
@@ -194,7 +236,7 @@ GPUDB_QueryResult GPU_NOSQL_DB::translateDoc(Doc resultDoc) {
     return userDoc;
 }
 
-GPUDB_Value GPU_NOSQL_DB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
+GPUDB_Value GPUDB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
     GPUDB_Value v;
     v.bigVal = 0;
     if (type == GPUDB_BLN) {
@@ -216,7 +258,7 @@ GPUDB_Value GPU_NOSQL_DB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
 // ********************************************************************************
 // Updating
 // must give a filter that does not hit a document
-int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type) {
+int GPUDB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type) {
     // Get Matching Entry
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID)).front();
 
@@ -243,7 +285,7 @@ int GPU_NOSQL_DB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & ty
 // ********************************************************************************
 // Deleting
 
-int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
+int GPUDB::deleteFromDoc(int filterID) {
     // Get Matching Docs
     std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
     // flatten docs into single vector
@@ -261,7 +303,7 @@ int GPU_NOSQL_DB::deleteFromDoc(int filterID) {
     return -1; // TODO error codes for entire function
 }
 
-void GPU_NOSQL_DB::flattenDoc(Doc d, std::list<Entry> * targetEntryList) {
+void GPUDB::flattenDoc(Doc d, std::list<Entry> * targetEntryList) {
     targetEntryList->push_back(d.kvPair);
     if (!d.children.empty()) {
         for (std::list<Doc>::iterator it = d.children.begin(); it != d.children.end(); it++) {

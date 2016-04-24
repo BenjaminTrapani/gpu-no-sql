@@ -18,9 +18,9 @@
 
 using namespace GPUDB;
 
-class GPU_NOSQL_DB {
+class GPUDB {
 public:
-    GPU_NOSQL_DB();
+    GPUDB();
 
     // Document Identification
     int getRootDoc();
@@ -33,7 +33,7 @@ public:
     // Returns an error/success code
     int addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type);
     // Returns an error/success code
-    int batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> & types);
+    long int batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> & types);
 
     // Filter Creation and Editing
 
@@ -67,7 +67,7 @@ private:
 
     unsigned long long int curID;
 
-    int addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type);
+    int addToDocNoSync(unsigned long long int realDocID, std::string & key, GPUDB_Value & value, GPUDB_Type & type);
 
     void setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & type);
     GPUDB_Value dataToValue(GPUDB_Data data, GPUDB_Type type);
