@@ -81,7 +81,7 @@ namespace GPUDB{
 
         __device__ __host__
         inline bool operator()(const Entry & val)const{
-            return val.key[0] == _filter.key[0] && val.key[1] == _filter.key[1];
+            return val.key[0] == _filter.key[0] && val.key[1] == _filter.key[1] && _filter.valType == val.valType;
         }
     private:
         Entry _filter;

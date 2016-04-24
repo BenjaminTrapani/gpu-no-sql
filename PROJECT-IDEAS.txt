@@ -1,0 +1,10 @@
+API-side:
+* implement caching
+* cache deleted entries and use update to create new entries in garbage's place.
+* maintain doc list on cpu and move result aggregation to CPU.
+
+GPU-side:
+* look into streaming kernels to avoid host for loop when building results and examining selected
+    elements of the same level.
+* provide new functions to get entries for a doc for a specified depth in order to support cpu-side
+    doc-list.
