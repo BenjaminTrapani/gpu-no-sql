@@ -27,9 +27,13 @@ DocMap::DocMap(GPUDBDriver *d) {
     driver = d;
 }
 
+// On Success: Returns an int from 0 to MAX_RESOURCES-1
+// Error -1 - No space to add another doc
+// Error -5 - Invalid Key
+// Error -9 - Bad Path
 int DocMap::addDoc(std::vector <std::string> strings) {
     if (openSpots.size() == 0) {
-        return -1; // TODO error code
+        return -1; // Not enough resources
     }
 
     // Get a place
@@ -47,7 +51,7 @@ int DocMap::addDoc(std::vector <std::string> strings) {
         newEntry.valType = GPUDB_DOC;
         int res = StringConversion::stringToInt(newEntry.key, strings.at(i));
         if (res != 0) {
-            return -1; // TODO error code
+            return -5; // Invalid Key
         }
 
         // Create the filter
@@ -69,6 +73,12 @@ int DocMap::addDoc(std::vector <std::string> strings) {
         newFilterSet.push_back(g);
     }
 
+    int actualDocID = driver->getDocumentID(newFilterSet);
+    if (actualDocID == 0) {
+        removeDoc(place);
+        return -9; // Bad Path
+    }
+
     // Add it to filter set spot
     filters[place] = newFilterSet;
     // get documentID and add it to doc spot
@@ -77,39 +87,49 @@ int DocMap::addDoc(std::vector <std::string> strings) {
     return place;
 }
 
+// 0 - invalid doc reference
 unsigned long long int DocMap::getDoc(int docID) {
     if (!validID(docID)) {
-        return -1; // TODO error code
+        return 0; // Invalid Doc Reference
     }
     return docs[docID];
 }
 
+// empty string = invalid doc reference
+//       exception - when called on root (0)
 std::vector<std::string> DocMap::getPath(int docID) {
     if (!validID(docID)) {
-        return std::vector<std::string>(0); // TODO error code
+        return std::vector<std::string>(0); // invalid doc reference
     }
     return paths[docID];
 }
 
+// empty FilterSet = invalid doc reference
+//       exception - when called on root (0)
 FilterSet DocMap::getFilterSet(int docID) {
     if (!validID(docID)) {
-        return FilterSet(); // TODO error code
+        return FilterSet(); // invalid doc reference
     }
     return filters[docID];
 }
 
+// Returns 0 on success
+// Error -2 - Invalid docID
+// Error -4 - Cannot remove root reference
 int DocMap::removeDoc(int docID) {
     if (!validID(docID)) {
-        return -1; // TODO error code
+        return -2; // Invalid docID
     }
     if (docID == 0) {
-        return -1; // TODO error code, cannot remove root
+        return -1; // Cannot remove root
     }
+
     openSpots.push_back(docID);
+    // TODO clear old data?
 
     return 0;
 }
 
 bool DocMap::validID(int filterID) {
-    return filterID < MAX_RESOURCES && filterID >= 0;
+    return filterID < MAX_RESOURCES && filterID >= 0; // TODO check if member?
 }

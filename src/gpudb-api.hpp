@@ -18,9 +18,10 @@
 
 using namespace GPUDB;
 
-class GPU_NOSQL_DB {
+class GPUDB_Database {
 public:
-    GPU_NOSQL_DB();
+    // Construction
+    GPUDB_Database();
 
     // Document Identification
     int getRootDoc();
@@ -28,37 +29,26 @@ public:
     int deleteDocRef(int docID);
 
     // Creation
-    // Returns the new Doc ID
     int newDoc(int docID, std::string & key);
-    // Returns an error/success code
     int addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type);
-    // Returns an error/success code
-    int batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> & types);
+    long int batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> & types);
 
     // Filter Creation and Editing
 
-    // Returns the new filter ID on the given Doc
     int newFilter(int docID);
-    // Returns an error/success code
     int addToFilter(int filterID, std::string key);
-    // Returns an error/success code
     int addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type & type, GPUDB_COMP comp);
-    // Move the filter to the next level
     int advanceFilter(int filterID);
-    // Delete the current filter
     int deleteFilter(int filterID);
 
-
     // Querying
-    std::vector<GPUDB_QueryResult> query(int filterID);
+    GPUDB_QueryResult query(int filterID);
 
     // Updating
-    // Returns an error/success code
     int updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type);
 
     // Deleting
-    // Returns an error/success code
-    int deleteFromDoc(int filterID);
+    void deleteFromDoc(int filterID);
 
 private:
     GPUDBDriver driver;
@@ -67,7 +57,7 @@ private:
 
     unsigned long long int curID;
 
-    int addToDocNoSync(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type);
+    int addToDocNoSync(unsigned long long int realDocID, std::string & key, GPUDB_Value & value, GPUDB_Type & type);
 
     void setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & type);
     GPUDB_Value dataToValue(GPUDB_Data data, GPUDB_Type type);
