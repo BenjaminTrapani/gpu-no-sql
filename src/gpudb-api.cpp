@@ -10,6 +10,7 @@
 // 4 - cannot remove root
 // 5 - Invalid Key
 // 6 - invalid filter reference
+// 7 - filter returns a document when it should not
 // 9 - bad path to document
 
 #include "gpudb-api.hpp"
@@ -166,6 +167,8 @@ int GPUDB::newFilter(int docID) {
     return filters.newFilter();
 }
 
+// Adds the given key to the filter
+// Errors: -5, -6
 int GPUDB::addToFilter(int filterID, std::string key) {
 
     // Translate key into an Entry for a search
@@ -178,6 +181,7 @@ int GPUDB::addToFilter(int filterID, std::string key) {
     return filters.addToFilter(filterID, newEntry, KEY_ONLY);
 }
 
+// Errors: -5, -6
 int GPUDB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type & type, GPUDB_COMP comp) {
     // Translate key and value into an Entry for a search
     Entry newEntry;
@@ -190,10 +194,12 @@ int GPUDB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB
     return filters.addToFilter(filterID, newEntry, comp);
 }
 
+// Errors: -6
 int GPUDB::advanceFilter(int filterID) {
     return filters.advanceFilter(filterID);
 }
 
+// Errors: -6
 int GPUDB::deleteFilter(int filterID) {
     return filters.removeFilter(filterID);
 }
@@ -201,19 +207,10 @@ int GPUDB::deleteFilter(int filterID) {
 // ********************************************************************************
 // Querying
 
+// Errors:
 std::vector<GPUDB_QueryResult> GPUDB::query(int filterID) {
-    // Get the resulting document
-    std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
-
-    std::vector<GPUDB_QueryResult> allResults;
-
-    for (std::vector<Doc>::iterator it = resultDoc.begin(); it != resultDoc.end(); it++) {
-        GPUDB_QueryResult result = translateDoc(*it);
-        allResults.push_back(result);
-    }
-
-
-    return allResults;
+    std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID)).front();
+    return translateDoc(resultDoc);
 }
 
 GPUDB_QueryResult GPUDB::translateDoc(Doc resultDoc) {
@@ -257,7 +254,8 @@ GPUDB_Value GPUDB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
 
 // ********************************************************************************
 // Updating
-// must give a filter that does not hit a document
+
+// Errors: -7
 int GPUDB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type) {
     // Get Matching Entry
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID)).front();
@@ -265,7 +263,7 @@ int GPUDB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type) {
     // Check that it is not a doc
     Entry oldEntry = resultDoc.kvPair;
     if (oldEntry.valType == GPUDB_DOC) {
-        return -1; // TODO error code does not hit a document
+        return -7; // update cannot hit a document
     }
 
     // Create the revised entry
@@ -279,13 +277,13 @@ int GPUDB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type) {
     // Update the entry
     driver.update(oldEntry, revisedEntry);
 
-    return 0; // TODO error code for success
+    return 0;
 }
 
 // ********************************************************************************
 // Deleting
 
-int GPUDB::deleteFromDoc(int filterID) {
+void GPUDB::deleteFromDoc(int filterID) {
     // Get Matching Docs
     std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
     // flatten docs into single vector
@@ -300,7 +298,6 @@ int GPUDB::deleteFromDoc(int filterID) {
         driver.deleteBy(*it);
     }
 
-    return -1; // TODO error codes for entire function
 }
 
 void GPUDB::flattenDoc(Doc d, std::list<Entry> * targetEntryList) {
