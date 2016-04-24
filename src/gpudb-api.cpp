@@ -21,7 +21,7 @@
 
 using namespace GPUDB;
 
-GPUDB_Database::GPUDB_Database():driver(), docs(&driver), filters(), curID(0) {
+GPUDB_Database::GPUDB_Database():driver(), docs(&driver), filters(), curID(1) {
     // empty
 }
 
@@ -227,6 +227,7 @@ GPUDB_QueryResult GPUDB_Database::translateDoc(Doc resultDoc) {
     if (!resultDoc.children.empty()) {
         for (std::list<Doc>::iterator it = resultDoc.children.begin(); it != resultDoc.children.end(); it++) {
             GPUDB_QueryResult childResult = translateDoc(*it);
+            userDoc.children.push_back(childResult);
         }
     }
 
