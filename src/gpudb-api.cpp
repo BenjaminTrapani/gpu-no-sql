@@ -21,25 +21,25 @@
 
 using namespace GPUDB;
 
-GPUDB::GPUDB():driver(), docs(&driver), filters(), curID(0) {
+GPUDB_Database::GPUDB_Database():driver(), docs(&driver), filters(), curID(0) {
     // empty
 }
 
 // ********************************************************************************
 // Document Identification
 
-int GPUDB::getRootDoc() {
+int GPUDB_Database::getRootDoc() {
     return 0;
 }
 
 // On Success: Returns an int from 0 to MAX_RESOURCES-1
 // Errors: -1, -5, -9
-int GPUDB::getDoc(std::vector<std::string> & strings) {
+int GPUDB_Database::getDoc(std::vector<std::string> & strings) {
     return docs.addDoc(strings);
 }
 
 // Errors: 0, -2, -4
-int GPUDB::deleteDocRef(int docID) {
+int GPUDB_Database::deleteDocRef(int docID) {
     return docs.removeDoc(docID);
 }
 
@@ -48,7 +48,7 @@ int GPUDB::deleteDocRef(int docID) {
 
 // Creates a document inside the given doc from ID with key "key"
 // Errors: -1, -2, -5, -9
-int GPUDB::newDoc(int docID, std::string & key) {
+int GPUDB_Database::newDoc(int docID, std::string & key) {
     // Create the new path
     std::vector<std::string> newPath = docs.getPath(docID);
     if (docID != 0 && newPath.empty()) {
@@ -80,7 +80,7 @@ int GPUDB::newDoc(int docID, std::string & key) {
 
 // adds to the given doc
 // Errors: 0, -2, -5
-int GPUDB::addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
+int GPUDB_Database::addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
 
     int realDocID = docs.getDoc(docID);
     if (realDocID == 0 && docID != 0) {
@@ -94,7 +94,7 @@ int GPUDB::addToDoc(int docID, std::string & key, GPUDB_Value & value, GPUDB_Typ
 
 // adds to the given doc with syncing
 // Errors: 0, -5
-int GPUDB::addToDocNoSync(unsigned long long int realDocID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
+int GPUDB_Database::addToDocNoSync(unsigned long long int realDocID, std::string & key, GPUDB_Value & value, GPUDB_Type & type) {
     // Create a new Entry
     Entry newEntry;
     newEntry.id = curID;
@@ -112,7 +112,7 @@ int GPUDB::addToDocNoSync(unsigned long long int realDocID, std::string & key, G
     return 0;
 }
 
-void GPUDB::setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & type) {
+void GPUDB_Database::setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & type) {
     entry.data.bigVal = 0;
     if (type == GPUDB_BLN) {
         entry.data.b = value.b;
@@ -132,7 +132,7 @@ void GPUDB::setEntryVal(Entry & entry, GPUDB_Value & value, GPUDB_Type & type) {
 // Adds in bulk
 // Errors: 0, -2, -3
 // -X - invalid key on the -x+1000000 place
-long int GPUDB::batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> & types) {
+long int GPUDB_Database::batchAdd(int docID, std::vector<std::string> & keys, std::vector<GPUDB_Value> & values, std::vector<GPUDB_Type> & types) {
 
     int realDocID = docs.getDoc(docID);
     if (realDocID == 0 && docID != 0) {
@@ -159,17 +159,17 @@ long int GPUDB::batchAdd(int docID, std::vector<std::string> & keys, std::vector
 
 // Creates a new filter
 // Errors: -1, -2
-int GPUDB::newFilter(int docID) {
+int GPUDB_Database::newFilter(int docID) {
     FilterSet docFilters = docs.getFilterSet(docID);
     if (docID != 0 && docFilters.empty()) {
         return -2; // Bad Document ID
     }
-    return filters.newFilter();
+    return filters.newFilter(docFilters);
 }
 
 // Adds the given key to the filter
 // Errors: -5, -6
-int GPUDB::addToFilter(int filterID, std::string key) {
+int GPUDB_Database::addToFilter(int filterID, std::string key) {
 
     // Translate key into an Entry for a search
     Entry newEntry;
@@ -182,7 +182,7 @@ int GPUDB::addToFilter(int filterID, std::string key) {
 }
 
 // Errors: -5, -6
-int GPUDB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type & type, GPUDB_COMP comp) {
+int GPUDB_Database::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type & type, GPUDB_COMP comp) {
     // Translate key and value into an Entry for a search
     Entry newEntry;
     int res = StringConversion::stringToInt(newEntry.key, key);
@@ -195,12 +195,12 @@ int GPUDB::addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB
 }
 
 // Errors: -6
-int GPUDB::advanceFilter(int filterID) {
+int GPUDB_Database::advanceFilter(int filterID) {
     return filters.advanceFilter(filterID);
 }
 
 // Errors: -6
-int GPUDB::deleteFilter(int filterID) {
+int GPUDB_Database::deleteFilter(int filterID) {
     return filters.removeFilter(filterID);
 }
 
@@ -208,12 +208,12 @@ int GPUDB::deleteFilter(int filterID) {
 // Querying
 
 // Errors:
-std::vector<GPUDB_QueryResult> GPUDB::query(int filterID) {
-    std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID)).front();
+GPUDB_QueryResult GPUDB_Database::query(int filterID) {
+    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID)).front();
     return translateDoc(resultDoc);
 }
 
-GPUDB_QueryResult GPUDB::translateDoc(Doc resultDoc) {
+GPUDB_QueryResult GPUDB_Database::translateDoc(Doc resultDoc) {
     // Set up the parent doc
     GPUDB_QueryResult userDoc;
 
@@ -233,7 +233,7 @@ GPUDB_QueryResult GPUDB::translateDoc(Doc resultDoc) {
     return userDoc;
 }
 
-GPUDB_Value GPUDB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
+GPUDB_Value GPUDB_Database::dataToValue(GPUDB_Data data, GPUDB_Type type) {
     GPUDB_Value v;
     v.bigVal = 0;
     if (type == GPUDB_BLN) {
@@ -256,7 +256,7 @@ GPUDB_Value GPUDB::dataToValue(GPUDB_Data data, GPUDB_Type type) {
 // Updating
 
 // Errors: -7
-int GPUDB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type) {
+int GPUDB_Database::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type) {
     // Get Matching Entry
     Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID)).front();
 
@@ -283,7 +283,7 @@ int GPUDB::updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type) {
 // ********************************************************************************
 // Deleting
 
-void GPUDB::deleteFromDoc(int filterID) {
+void GPUDB_Database::deleteFromDoc(int filterID) {
     // Get Matching Docs
     std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID));
     // flatten docs into single vector
@@ -300,7 +300,7 @@ void GPUDB::deleteFromDoc(int filterID) {
 
 }
 
-void GPUDB::flattenDoc(Doc d, std::list<Entry> * targetEntryList) {
+void GPUDB_Database::flattenDoc(Doc d, std::list<Entry> * targetEntryList) {
     targetEntryList->push_back(d.kvPair);
     if (!d.children.empty()) {
         for (std::list<Doc>::iterator it = d.children.begin(); it != d.children.end(); it++) {
