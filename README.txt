@@ -81,39 +81,3 @@ Error Codes:
 7 - filter returns a document when it should not
 9 - bad path to document
 ////////////////////////////////////////////////////////////
-
-Work Needed Summary
-
-Current Work:
-    Adrian:
-        Handle/recheck getDocs
-        Test API and Time
-        Error Codes
-        Readme for Use
-    Ben:
-        Formal Efficiency Math on Driver
-        Powerpoint Structure / Basics
-        Extras
-            Get Rid of Buffer
-
-Next Steps
-    Resource Management
-        Safer Reference Deletes
-        Better Validity Checks
-    Wildcard Doc Filter
-    And and Or Type in FilterGroups
-        User Accessible
-
-Work Schedule
-
-Adrian:
-Sunday: Cleanup Finalizations, Error Codes, Tests
-Monday: Tests Finalizations, Finalize Powerpoint
-
-Ben:
-Sunday: Powerpoint Work, Measure Performance
-Monday: Finalize Powerpoint
-
-Both:
-Saturday Meeting: Run Tests, Plan
-Sunday Meeting: Review Powerpoint and Finalize Presentation
