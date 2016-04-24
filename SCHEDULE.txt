@@ -1,0 +1,29 @@
+Work Needed Summary
+
+Current Work:
+    Adrian:
+        Test API and Time
+    Ben:
+        Formal Efficiency Math on Driver
+        Powerpoint Structure / Basics
+        Extras
+            Get Rid of Buffer
+
+Next Steps
+    Resource Management
+        Safer Reference Deletes
+        Better Validity Checks
+    Wildcard Doc Filter
+    And and Or Type in FilterGroups
+        User Accessible
+
+Work Schedule
+
+Adrian:
+Sunday / Monday: Tests
+
+Ben:
+Sunday / Monday: Measure Performance
+
+Both:
+Monday: Powerpoint Finalization
