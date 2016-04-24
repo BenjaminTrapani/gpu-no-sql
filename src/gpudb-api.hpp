@@ -18,10 +18,10 @@
 
 using namespace GPUDB;
 
-class GPUDB {
+class GPUDB_Database {
 public:
     // Construction
-    GPUDB();
+    GPUDB_Database();
 
     // Document Identification
     int getRootDoc();
@@ -42,7 +42,7 @@ public:
     int deleteFilter(int filterID);
 
     // Querying
-    std::vector<GPUDB_QueryResult> query(int filterID);
+    GPUDB_QueryResult query(int filterID);
 
     // Updating
     int updateOnDoc(int filterID, GPUDB_Value & value, GPUDB_Type & type);
