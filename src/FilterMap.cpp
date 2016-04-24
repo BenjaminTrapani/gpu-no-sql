@@ -11,7 +11,12 @@ FilterMap::FilterMap() {
     }
 }
 
+// Creates a new filter - returns -1 if there isn't enough resoruces
 int FilterMap::newFilter(FilterSet sourceDocFilter) {
+    if (openSpots.empty()) {
+        return -1;
+    }
+
     int newID = openSpots.front();
     filters[newID] = sourceDocFilter;
     return newID;
@@ -20,16 +25,17 @@ int FilterMap::newFilter(FilterSet sourceDocFilter) {
 FilterSet FilterMap::getFilter(int filterID) {
     if (!validID(filterID)) {
         FilterSet empty;
-        return empty; // TODO error code
+        return empty; // Invalid filter reference
     }
     FilterSet curFilters = filters[filterID];
     curFilters.push_back(curGroups[filterID]);
     return curFilters;
 }
 
+// -6 - invalid filter reference
 int FilterMap::addToFilter(int filterID, Entry e, GPUDB_COMP comp) {
     if (!validID(filterID)) {
-        return -1; // TODO error code
+        return -6; // invalid filter reference
     }
     Filter newFilter;
     newFilter.entry = e;
