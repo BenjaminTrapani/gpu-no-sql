@@ -8,3 +8,6 @@ GPU-side:
     elements of the same level.
 * provide new functions to get entries for a doc for a specified depth in order to support cpu-side
     doc-list.
+
+Testing:
+https://github.com/google/googletest

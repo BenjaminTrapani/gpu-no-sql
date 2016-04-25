@@ -152,13 +152,13 @@ void GPUDBDriverTest::runDeepNestingTests(){
 
     FilterSet filterByFirstFourNest;
     filterByFirstFourNest.reserve(4);
-    for(int i = 1; i < 5; i++){
+    for (int i = 1; i < 5; i++) {
         Entry curFilter;
         EntryUtils::assignKeyToEntry(curFilter, i);
         curFilter.valType=GPUDB_BGV;
         curFilter.data.bigVal = i;
         FilterGroup curGroup;
-        if(i==4){
+        if (i == 4) {
             curGroup.resultMember = true;
         }
         Filter theFilter(curFilter, EQ);

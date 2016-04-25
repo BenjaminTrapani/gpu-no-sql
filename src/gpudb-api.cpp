@@ -14,10 +14,9 @@
 // 9 - bad path to document
 
 #include "gpudb-api.hpp"
-#include "stdio.h"
-#include <cstdio>
 #include "presets.hpp"
 #include "StringConversion.hpp"
+#include <cstdio>
 
 using namespace GPUDB;
 
@@ -49,30 +48,40 @@ int GPUDB_Database::deleteDocRef(int docID) {
 // Creates a document inside the given doc from ID with key "key"
 // Errors: -1, -2, -5, -9
 int GPUDB_Database::newDoc(int docID, std::string & key) {
-    // Create the new path
+    // Check for valid docID and create the new path
     std::vector<std::string> newPath = docs.getPath(docID);
     if (docID != 0 && newPath.empty()) {
         return -2; // Invalid Doc reference
     }
     newPath.push_back(key);
 
+    // Create the actual new doc entry
+    Entry newEntry;
+    newEntry.parentID = docs.getDoc(docID);
+    newEntry.id = curID;
+    curID += 1;
+    newEntry.valType = GPUDB_DOC;
+    int res = StringConversion::stringToInt(newEntry.key, key);
+    if (res != 0) {
+        return -5; // Invalid Key
+    }
+
+    printf("Entry parent ID: %llu\n", newEntry.parentID);
+    printf("Entry ID: %llu\n", newEntry.id);
+    printf("Entry ValType: %i\n", newEntry.valType);
+    printf("Entry key 1: %lld\n", newEntry.key[0]);
+    printf("Entry key 2: %lld\n", newEntry.key[1]);
+
+    // Add New Entry to database
+    printf("Adding entry\n");
+    driver.create(newEntry);
+    driver.syncCreates();
+
     // Get a docID for the path
     int newDocID = getDoc(newPath);
     if (newDocID < 0) {
         return newDocID; // bad path, no space, or invalid added key
     }
-
-    // Create the actual new doc entry
-    unsigned long long int parentID = docs.getDoc(docID);
-    Entry newEntry;
-    newEntry.id = curID;
-    curID += 1;
-    newEntry.valType = GPUDB_DOC;
-    StringConversion::stringToInt(newEntry.key, key);
-
-    // Add New Entry to database
-    driver.create(newEntry);
-    driver.syncCreates();
 
     // return the new doc ID
     return newDocID;
@@ -107,6 +116,13 @@ int GPUDB_Database::addToDocNoSync(unsigned long long int realDocID, std::string
     newEntry.valType = type;
     setEntryVal(newEntry, value, type);
 
+    printf("Entry parent ID: %llu\n", newEntry.parentID);
+    printf("Entry ID: %llu\n", newEntry.id);
+    printf("Entry ValType: %i\n", newEntry.valType);
+    printf("Entry key 1: %lld\n", newEntry.key[0]);
+    printf("Entry key 2: %lld\n", newEntry.key[1]);
+
+    printf("Adding Entry\n");
     driver.create(newEntry); // TODO add error code in driver?
 
     return 0;
@@ -177,6 +193,7 @@ int GPUDB_Database::addToFilter(int filterID, std::string key) {
     if (res != 0) {
         return -5; // Invalid Key
     }
+    newEntry.valType = GPUDB_DOC;
     // Add new entry to given filter
     return filters.addToFilter(filterID, newEntry, KEY_ONLY);
 }
@@ -209,15 +226,22 @@ int GPUDB_Database::deleteFilter(int filterID) {
 
 // Errors:
 GPUDB_QueryResult GPUDB_Database::query(int filterID) {
-    Doc resultDoc = driver.getDocumentsForFilterSet(filters.getFilter(filterID)).front();
-    return translateDoc(resultDoc);
+    FilterSet toFilter = filters.getFilter(filterID);
+    //printf("FilterSet size: %d\n", toFilter.size());
+    //printf("First Filter Group Size: %d\n", toFilter.front().group.size());
+    std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(toFilter);
+    if (resultDoc.size() == 0) {
+        Doc emptyDoc;
+        return translateDoc(emptyDoc);
+    }
+    return translateDoc(resultDoc[0]);
 }
 
 GPUDB_QueryResult GPUDB_Database::translateDoc(Doc resultDoc) {
     // Set up the parent doc
     GPUDB_QueryResult userDoc;
 
-    ResultKV newKV;
+    GPUDB_KV newKV;
     newKV.key = StringConversion::intToString(resultDoc.kvPair.key);
     newKV.type = resultDoc.kvPair.valType;
     newKV.value = dataToValue(resultDoc.kvPair.data, newKV.type);
@@ -309,13 +333,5 @@ void GPUDB_Database::flattenDoc(Doc d, std::list<Entry> * targetEntryList) {
         }
     }
     return;
-}
-
-// ********************************************************************************
-// Testing
-
-int main() {
-    printf("Running main in top level API\n");
-    return 0;
 }
 

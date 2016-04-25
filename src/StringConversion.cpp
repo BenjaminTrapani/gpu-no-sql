@@ -20,9 +20,13 @@ int StringConversion::stringToInt(long long int *dest, const std::string & src) 
         long long int to[STRING_SIZE_INT];
     };
 
-    TempConverter converter;
-    memcpy(converter.from, src.c_str(), sizeof(converter.from));
-    memcpy(dest, converter.to, sizeof(converter.to));
+    // TODO get working
+    //TempConverter converter;
+    //memcpy(converter.from, src.c_str(), sizeof(converter.from));
+    //memcpy(dest, converter.to, sizeof(converter.to));
+
+    dest[0] = 555;
+    dest[1] = 555;
 
     return 0;
 }
@@ -33,8 +37,9 @@ std::string StringConversion::intToString(const long long int *src) {
         long long int from[STRING_SIZE_INT];
     };
 
-    TempConverter converter;
-    memcpy(converter.from, src, sizeof(converter.from));
+    //TempConverter converter;
+    //memcpy(converter.from, src, sizeof(converter.from));
 
-    return std::string(converter.to);
+    //return std::string(converter.to);
+    return std::string("placeholder"); // TODO
 }
