@@ -11,14 +11,14 @@
 #include "Entry.hpp"
 
 namespace GPUDB {
-    typedef struct ResultKV {
+    typedef struct GPUDB_KV {
         std::string key;
         GPUDB_Value value;
         GPUDB_Type type;
     };
 
     typedef struct QueryResult {
-        ResultKV *kv;
+        GPUDB_KV *kv;
         std::list<QueryResult> children;
     } GPUDB_QueryResult;
 }

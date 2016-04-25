@@ -28,7 +28,9 @@ FilterSet FilterMap::getFilter(int filterID) {
         return empty; // Invalid filter reference
     }
     FilterSet curFilters = filters[filterID];
-    curFilters.push_back(curGroups[filterID]);
+    if (curGroups[filterID].group.size() != 0) {
+        curFilters.push_back(curGroups[filterID]);
+    }
     return curFilters;
 }
 

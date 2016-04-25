@@ -36,22 +36,19 @@ GPUDBDriver::GPUDBDriver() {
     cudaDeviceProp propOfInterest;
     cudaGetDeviceProperties(&propOfInterest, 0);
     size_t memBytes = propOfInterest.totalGlobalMem;
-    size_t allocSize = memBytes*0.25f; //0.12
+    size_t allocSize = memBytes*0.23f; //0.12
     numEntries = allocSize/sizeof(Entry);
     printf("Num entries = %i\n", numEntries);
 
     //buffer allocation and initialization
     deviceEntries.reserve(numEntries);
 
-    //deviceIntermediateBuffer1 = new DeviceVector_t(numEntries);
     hostResultBuffer = new HostVector_t(numEntries);
     hostCreateBuffer = new HostVector_t();
     hostCreateBuffer->reserve(numEntries);
 }
 
 GPUDBDriver::~GPUDBDriver() {
-    //delete deviceIntermediateBuffer1;
-    //deviceIntermediateBuffer1=0;
 
     delete hostResultBuffer;
     hostResultBuffer=0;
@@ -67,7 +64,8 @@ void GPUDBDriver::create(const Doc & toCreate) {
     }
 }
 
-void GPUDBDriver::create(const Entry &object){
+void GPUDBDriver::create(const Entry &object) {
+    //printf("Adding Entry\n");
     hostCreateBuffer->push_back(object);
     //deviceEntries.push_back(object);
 }
@@ -206,49 +204,49 @@ unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filt
         switch (firstGroupIter->comparator){
             case GREATER:{
                 thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
-                                     SelectEntry(1, filters[0].resultMember),
+                                     SelectEntryTop(1, filters[0].resultMember),
                                      IsEntryGreater(firstGroupIter->entry));
                 break;
             }
             case GREATER_EQ:{
                 thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
-                                     SelectEntry(1, filters[0].resultMember),
+                                     SelectEntryTop(1, filters[0].resultMember),
                                      IsEntryGreaterEQ(firstGroupIter->entry));
                 break;
             }
             case EQ:{
                 thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
-                                     SelectEntry(1, filters[0].resultMember),
+                                     SelectEntryTop(1, filters[0].resultMember),
                                      IsPartialEntryMatch(firstGroupIter->entry));
                 break;
             }
             case LESS_EQ:{
                 thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
-                                     SelectEntry(1, filters[0].resultMember),
+                                     SelectEntryTop(1, filters[0].resultMember),
                                      IsEntryLessEQ(firstGroupIter->entry));
                 break;
             }
             case LESS:{
                 thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
-                                     SelectEntry(1, filters[0].resultMember),
+                                     SelectEntryTop(1, filters[0].resultMember),
                                      IsEntryLess(firstGroupIter->entry));
                 break;
             }
             case KEY_ONLY:{
                 thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
-                                     SelectEntry(1, filters[0].resultMember),
+                                     SelectEntryTop(1, filters[0].resultMember),
                                      EntryKeyMatch(firstGroupIter->entry));
                 break;
             }
             case VAL_ONLY:{
                 thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
-                                     SelectEntry(1, filters[0].resultMember),
+                                     SelectEntryTop(1, filters[0].resultMember),
                                      EntryValMatch(firstGroupIter->entry));
                 break;
             }
             default:{
                 thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
-                                            SelectEntry(1, filters[0].resultMember),
+                                            SelectEntryTop(1, filters[0].resultMember),
                                             IsPartialEntryMatch(firstGroupIter->entry));
             }
         }
@@ -259,15 +257,16 @@ unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filt
         optimizedSearchEntriesDown(*iter, layer);
         layer++;
     }
+
     t2 = clock();
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("    Selecting all for querry took %fms\n", diff);
+    //printf("    Selecting all for query took %fms\n", diff);
 
     t1 = clock();
     layer = selectAllSubelementsWithParentsSelected(layer);
     t2 = clock();
     diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("    Selecting all subelements took %fms\n", diff);
+    //printf("    Selecting all sub-elements took %fms\n", diff);
 
     return layer;
 }
@@ -324,26 +323,33 @@ void GPUDBDriver::buildResultsBottomUp(std::vector<Doc> & result, const unsigned
 }
 
 std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters) {
+    printf("Size of filter set: %d\n", filters.size());
+    printf("Filter key 1 val: %d\n", filters[0].group[0].entry.key[0]);
+    printf("Filter key 2 val: %d\n", filters[0].group[0].entry.key[1]);
+    printf("Filter comparator: %d\n", filters[0].group[0].comparator);
+    printf("Filter type: %d\n", filters[0].group[0].entry.valType);
     clock_t t1, t2;
     t1 = clock();
     unsigned long int finalLevel = internalGetDocsForFilterSet(filters);
     t2 = clock();
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("  Select matches took %fms\n", diff);
+    //printf("  Select matches took %fms\n", diff);
     std::vector<Doc> result;
     t1 = clock();
     buildResultsBottomUp(result, finalLevel);
     t2 = clock();
     diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("  Build results took %fms\n", diff);
+    //printf("  Build results took %fms\n", diff);
     return result;
 }
 
 unsigned long long int GPUDBDriver::getDocumentID(const FilterSet & sourceFilters) {
     std::vector<Doc> result = getDocumentsForFilterSet(sourceFilters);
+    printf("Get Document ID Result Size: %d\n", result.size());
 
-    if(result.size()==1)
-        return getDocumentsForFilterSet(sourceFilters)[0].kvPair.id;
+    if (result.size() == 1) {
+        return result[0].kvPair.id;
+    }
 
     return 0;
 }

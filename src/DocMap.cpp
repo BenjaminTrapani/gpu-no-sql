@@ -47,7 +47,6 @@ int DocMap::addDoc(std::vector <std::string> strings) {
 
         // Create the entry
         Entry newEntry;
-
         newEntry.valType = GPUDB_DOC;
         int res = StringConversion::stringToInt(newEntry.key, strings.at(i));
         if (res != 0) {
@@ -78,11 +77,12 @@ int DocMap::addDoc(std::vector <std::string> strings) {
         removeDoc(place);
         return -9; // Bad Path
     }
+    //printf("Actual Doc ID: %d\n", actualDocID);
 
     // Add it to filter set spot
     filters[place] = newFilterSet;
     // get documentID and add it to doc spot
-    docs[place] = driver->getDocumentID(newFilterSet);
+    docs[place] = actualDocID;
     // return the place
     return place;
 }

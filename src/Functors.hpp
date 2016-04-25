@@ -156,6 +156,27 @@ namespace GPUDB {
         const bool _isResultMember;
     };
 
+    struct SelectEntryTop : thrust::unary_function<Entry, Entry> {
+        inline SelectEntryTop(unsigned long int layer, const bool isResultMember):_layer(layer),
+                                                                               _isResultMember(isResultMember){}
+
+        __device__ __host__
+        inline Entry operator() (const Entry & val) const {
+            if (!val.parentID) {
+                Entry result = val;
+                result.selected = true;
+                result.layer = _layer;
+                result.isResultMember = _isResultMember;
+                return result;
+            }
+            return val;
+        }
+
+    private:
+        const unsigned long int _layer;
+        const bool _isResultMember;
+    };
+
     struct UnselectEntry : thrust::unary_function<Entry, Entry> {
         __device__ __host__
         inline Entry operator() (const Entry & val) const {
