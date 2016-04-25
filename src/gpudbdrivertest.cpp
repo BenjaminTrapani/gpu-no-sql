@@ -37,11 +37,14 @@ void GPUDBDriverTest::runTests(){
             perm->children.push_back(realLastEntry);
         }
     }
-
-
+    clock_t t1, t2;
+    t1 = clock();
     driver.create(coreDoc);
     driver.syncCreates();
+    t2 = clock();
     printf("Database has %i entries\n", driver.getNumEntries());
+    float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("Creating all entries took %fms\n", diff);
 
     Entry filter1 = realLastEntry;
     Entry filter2;
@@ -62,7 +65,6 @@ void GPUDBDriverTest::runTests(){
     filterSet.push_back(filters2);
     filterSet.push_back(filters1);
 
-    clock_t t1, t2;
     t1 = clock();
     std::vector<Doc> hostqueryResult = driver.getDocumentsForFilterSet(filterSet);
     t2 = clock();
