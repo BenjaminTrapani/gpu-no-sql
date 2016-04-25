@@ -68,11 +68,17 @@ int main() {
 
     int rootID = database.getRootDoc();
 
+    printf("Number of entries: %d\n", database.driver.getNumEntries());
+
     int firstDoc = database.newDoc(rootID, testName);
     printf("new created doc ID: %d\n", firstDoc);
 
+    printf("Number of entries: %d\n", database.driver.getNumEntries());
+
     int res = database.addToDoc(firstDoc, testName2, testVal, intType);
     printf("Result of add: %d\n", res);
+
+    printf("Number of entries: %d\n", database.driver.getNumEntries());
 
 //    int resTotal = 0;
 //    for (int i = 0; i < 10; i += 1) {
@@ -91,12 +97,7 @@ int main() {
     timeDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("Time Taken For Query: %fms.\n", timeDiff);
 
-
-    // Use for test timing format
-//    t1 = clock();
-//    t2 = clock();
-//    timeDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-//    printf("Time Taken For X: %fms.\n", timeDiff);
+    printf("Number of entries: %d\n", database.driver.getNumEntries());
 
     return 0;
 }
