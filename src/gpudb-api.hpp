@@ -50,11 +50,10 @@ public:
     // Deleting
     void deleteFromDoc(int filterID);
 
-    GPUDBDriver driver;
-
 private:
     DocMap docs;
     FilterMap filters;
+    GPUDBDriver driver;
 
     unsigned long long int curID;
 
