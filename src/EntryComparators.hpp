@@ -98,5 +98,16 @@ namespace GPUDB{
         Entry _filter;
     };
 
+    struct MatchEntryByID : thrust::unary_function<Entry, bool>{
+        inline MatchEntryByID(const unsigned long long int id):_id(id){}
+
+        __device__ __host__
+        inline bool operator()(const Entry & val)const{
+            return val.id == _id;
+        }
+    private:
+        const unsigned long long int _id;
+    };
+
 }
 #endif //GPU_NO_SQL_ENTRYCOMPARATORS_H
