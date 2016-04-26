@@ -36,29 +36,35 @@ GPUDBDriver::GPUDBDriver() {
     cudaDeviceProp propOfInterest;
     cudaGetDeviceProperties(&propOfInterest, 0);
     size_t memBytes = propOfInterest.totalGlobalMem;
-    size_t allocSize = memBytes*0.23f; //0.12
+    size_t allocSize = memBytes*0.12f; //0.12
     numEntries = allocSize/sizeof(Entry);
     printf("Num entries = %i\n", numEntries);
 
     //buffer allocation and initialization
     deviceEntries.reserve(numEntries);
+    intermediateBuffer = new DeviceVector_t(numEntries);
 
-    hostResultBuffer = new HostVector_t(numEntries);
     hostCreateBuffer = new HostVector_t();
     hostCreateBuffer->reserve(numEntries);
+
+    hostResultBuffer = new HostVector_t();
+    hostResultBuffer->reserve(numEntries);
 }
 
 GPUDBDriver::~GPUDBDriver() {
-
-    delete hostResultBuffer;
-    hostResultBuffer=0;
+    delete intermediateBuffer;
+    intermediateBuffer=0;
 
     delete hostCreateBuffer;
     hostCreateBuffer = 0;
+
+    delete hostResultBuffer;
+    hostResultBuffer = 0;
 }
 
 void GPUDBDriver::create(const Doc & toCreate) {
     create(toCreate.kvPair);
+    cpuAggregator.onEntryCreate(toCreate.kvPair);
     for (std::list<Doc>::const_iterator iter = toCreate.children.begin(); iter != toCreate.children.end(); ++iter) {
         create(*iter);
     }
@@ -85,10 +91,12 @@ void GPUDBDriver::syncCreates() {
 void GPUDBDriver::update(const Entry & searchFilter, const Entry & updates) {
     thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), ModifyEntry(updates),
                          IsFullEntryMatch(searchFilter));
+    cpuAggregator.onUpdate(searchFilter.id, updates);
 }
 
 void GPUDBDriver::deleteBy(const Entry & searchFilter) {
     thrust::remove_if(deviceEntries.begin(), deviceEntries.end(), IsFullEntryMatch(searchFilter));
+    cpuAggregator.onDelete(searchFilter.id);
 }
 
 
@@ -276,30 +284,58 @@ void GPUDBDriver::markValidRootsForLayer(const unsigned long long int beginLayer
     }
 }
 
+/*instead of building results using recursive find_if calls,
+ *
+ * 1. //won't work, flagging sub entries still requires sequence of find_if calls.
+ * flag everything in the result set, copy_if to an intermediate buffer,
+ * and copy back to host. Iterate through host vector. If an element's parent
+ * id is a valid entry in hash table between id's and docs, add this element
+ * as a child of the matched parent and create another table entry with the
+ * pointer to the newly added entry. Otherwise, add the entry in the table. If an item
+ * is marked as a result member, add it to the result vector of docs.
+ *
+ * //Will work but will take time to implement. Result buildup bottleneck will not be find_if but instead
+ * //will be GPU-CPU transfer and CPU-side memory accesses.
+ * 2. Keep a cpu-side table mapping id's to a list of child device Entry* pointers (populated on create and update in
+ * constant time).
+ * Lookup current parent->kvPair.id in the table, fetch data at each device address and add doc as subdoc. Do process as
+ * before and build result tree top down recursively.
+ * */
+/*
+ *
+ *
+ */
 
-void GPUDBDriver::getDocumentsForParent(Doc * parent, Entry * gpuRaw){
+void GPUDBDriver::getDocumentsForParent(Doc * parent){
+    clock_t t1, t2;
+    t1 = clock();
     DeviceVector_t::iterator iter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
-                                                    GetElementWithParent(gpuRaw));
+                                                 GetElementWithParentID(parent->kvPair.id));
+    t2 = clock();
+    totalFindIfMs += ((float)(t2 - t1) / 1000000.0F ) * 1000;
     while (iter != deviceEntries.end()){
+        size_t iterPos = thrust::distance(deviceEntries.begin(), iter);
+
         Doc * perm = parent->addChild(Doc(*iter));
-        getDocumentsForParent(perm, thrust::raw_pointer_cast(&(*iter)));
-        iter = thrust::find_if(iter + 1, deviceEntries.end(),
-                               GetElementWithParent(gpuRaw));
+        getDocumentsForParent(perm);
+        t1 = clock();
+        iter = thrust::find_if(iter+1, deviceEntries.end(),
+                               GetElementWithParentID(parent->kvPair.id));
+        t2 = clock();
+        totalFindIfMs += ((float)(t2 - t1) / 1000000.0F ) * 1000;
     }
 }
 void GPUDBDriver::getDocumentsForRoots(const unsigned long int rootLayer, std::vector<Doc> & result){
-    DeviceVector_t::iterator iter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
-                                                    IsEntrySelected(rootLayer));
-    size_t curIndex = 0;
-    while(iter != deviceEntries.end()){
-        Entry hostEntry = *iter;
-        Doc curDoc(hostEntry);
-        result.push_back(curDoc);
-        getDocumentsForParent(&result[curIndex], thrust::raw_pointer_cast(&(*iter)));
-        iter = thrust::find_if(iter + 1, deviceEntries.end(),
-                               IsEntrySelected(rootLayer));
-        curIndex++;
-    }
+    DeviceVector_t::iterator endPos = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(), intermediateBuffer->begin(),
+                    IsEntrySelected(rootLayer));
+
+    thrust::copy_if(deviceEntries.begin(), deviceEntries.end(), hostResultBuffer->begin(),
+                                                      IsEntrySelected(rootLayer));
+
+    size_t numCopied = thrust::distance(intermediateBuffer->begin(), endPos);
+
+    thrust::copy(intermediateBuffer->begin(), endPos, hostResultBuffer->begin());
+    cpuAggregator.buildResults(*hostResultBuffer, numCopied, result);
 }
 
 std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters) {
