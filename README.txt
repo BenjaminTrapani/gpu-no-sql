@@ -1,8 +1,16 @@
-GPUDB API
+*********************************************************************
+*********************           GPUDB         ***********************
+*********************************************************************
 
-////////////////////////////////////////////////////////////
 Run Instructions:
 python deploy.py
+
+Notes:
+The driver tests exhibit full use and functionality - the API is nearly complete but is
+not stable and fully functioning, but the structure of the code and the approach exhibits an
+efficient and logical implementation. All error code documentation and the calls themselves are finalized for
+the current abilities of the driver.
+
 ////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////
