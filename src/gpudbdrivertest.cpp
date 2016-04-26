@@ -209,7 +209,9 @@ void GPUDBDriverTest::runTwoKeyTest() {
     group.resultMember = true;
 
     Filter filter;
-    filter.entry = ent1;
+    filter.entry.key[0] = 1;
+    filter.entry.key[1] = 2;
+    filter.entry.valType = GPUDB_BGV;
     filter.comparator = KEY_ONLY;
     group.group.push_back(filter);
     getRoot.push_back(group);
