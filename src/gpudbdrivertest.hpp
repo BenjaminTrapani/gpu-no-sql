@@ -11,6 +11,7 @@ public:
     void runTests();
 private:
     void runDeepNestingTests();
+    void runTwoKeyTest();
 };
 
 #endif //GPU_NO_SQL_GPUDBDRIVERTEST_H
