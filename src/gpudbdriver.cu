@@ -260,13 +260,13 @@ unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filt
 
     t2 = clock();
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    //printf("    Selecting all for query took %fms\n", diff);
+    printf("    Selecting all for query took %fms\n", diff);
 
     t1 = clock();
     layer = selectAllSubelementsWithParentsSelected(layer);
     t2 = clock();
     diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    //printf("    Selecting all sub-elements took %fms\n", diff);
+    printf("    Selecting all sub-elements took %fms\n", diff);
 
     return layer;
 }
@@ -323,23 +323,18 @@ void GPUDBDriver::buildResultsBottomUp(std::vector<Doc> & result, const unsigned
 }
 
 std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters) {
-    printf("Size of filter set: %d\n", filters.size());
-    printf("Filter key 1 val: %d\n", filters[0].group[0].entry.key[0]);
-    printf("Filter key 2 val: %d\n", filters[0].group[0].entry.key[1]);
-    printf("Filter comparator: %d\n", filters[0].group[0].comparator);
-    printf("Filter type: %d\n", filters[0].group[0].entry.valType);
     clock_t t1, t2;
     t1 = clock();
     unsigned long int finalLevel = internalGetDocsForFilterSet(filters);
     t2 = clock();
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    //printf("  Select matches took %fms\n", diff);
+    printf("  Select matches took %fms\n", diff);
     std::vector<Doc> result;
     t1 = clock();
     buildResultsBottomUp(result, finalLevel);
     t2 = clock();
     diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    //printf("  Build results took %fms\n", diff);
+    printf("  Build results took %fms\n", diff);
     return result;
 }
 

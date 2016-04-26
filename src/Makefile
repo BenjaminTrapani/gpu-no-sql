@@ -6,7 +6,7 @@ INCLUDE_DIRS=-I../deps/thrust/thrust/ -I../deps/cub/ -I.
 
 GPUDBLIB_PATH=/home/gpu/gpudb/gpu-no-sql/src/
 
-TOPAPI_SOURCES = gpudbdriver.cu gpudb-api.cpp DocMap.cpp FilterMap.cpp StringConversion.cpp gpudb-api-tests.cpp
+TOPAPI_SOURCES = gpudbdriver.cu gpudb-api.cpp DocMap.cpp FilterMap.cpp StringConversion.cpp
 
 gpudb:
 	$(NVCC) -O3 gpudbdriver.cu gpudbdrivertest.cpp --disable-warnings -l $(LIBS) -o $@ $(INCLUDE_DIRS)
