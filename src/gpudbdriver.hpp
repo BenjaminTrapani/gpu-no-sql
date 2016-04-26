@@ -62,9 +62,11 @@ namespace GPUDB {
         HostVector_t * hostCreateBuffer;
 
         void optimizedSearchEntriesDown(const FilterGroup & filterGroup, const unsigned long int layer);
-        unsigned long int selectAllSubelementsWithParentsSelected(const unsigned long int beginLayer);
+        void markValidRootsForLayer(const unsigned long long int beginLayer);
         unsigned long int internalGetDocsForFilterSet(const FilterSet &filters);
-        void buildResultsBottomUp(std::vector<Doc> & result, const unsigned long int beginLayer);
+
+        void getDocumentsForParent(Doc * parent, Entry * gpuRaw);
+        void getDocumentsForRoots(const unsigned long int rootLayer, std::vector<Doc> & result);
 
         std::vector<Doc> getEntriesForRoots(const InternalResult & rootResults);
 
