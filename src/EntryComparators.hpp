@@ -7,7 +7,7 @@
 
 #include "Filter.hpp"
 
-namespace GPUDB{
+namespace GPUDB {
     struct IsPartialEntryMatch : thrust::unary_function<Entry, bool> {
         inline IsPartialEntryMatch(const Entry & filter):_filter(filter){}
 
