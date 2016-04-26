@@ -198,6 +198,10 @@ unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filt
     clock_t t1, t2;
     t1 = clock();
     thrust::transform(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), UnselectEntry());
+    unsigned long int resultLayer = 0;
+    if(filters[0].resultMember){
+        resultLayer = 1;
+    }
     for (FilterGroup::const_iterator firstGroupIter = filters[0].group.begin();
          firstGroupIter != filters[0].group.end();
          ++firstGroupIter) {
@@ -256,7 +260,11 @@ unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filt
     for (FilterSet::const_iterator iter = filters.begin()+1; iter != filters.end(); ++iter) {
         optimizedSearchEntriesDown(*iter, layer);
         layer++;
+        if(iter->resultMember)
+            resultLayer = layer;
     }
+
+    markValidRootsForLayer(layer, resultLayer);
 
     t2 = clock();
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
@@ -271,6 +279,52 @@ unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filt
     return layer;
 }
 
+void GPUDBDriver::markValidRootsForLayer(const unsigned long long int beginLayer,
+                                            const unsigned long long int resultLayer){
+    std::unordered_map<unsigned long int, Doc> docIDMap;
+    DeviceVector_t::iterator iter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
+                                                    IsEntrySelected(beginLayer));
+    while (iter != deviceEntries.end()){
+
+        DeviceVector_t::iterator childIter = iter;
+        Entry curHostChild = *childIter;
+        docIDMap[curHostChild.id] = Doc(curHostChild);
+        DeviceVector_t::iterator parentIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
+                                                              GetElementWithChild(thrust::raw_pointer_cast(&(*childIter))));
+
+        Doc * lastValidParent;
+        if (curHostChild.isResultMember) {
+            lastValidParent = &docIDMap[curHostChild.id];
+        } else {
+            lastValidParent = 0;
+        }
+        while (parentIter != deviceEntries.end() && curLayer != resultLayer) {
+            Entry hostChild = *childIter;
+            Entry hostParent = *parentIter;
+
+            std::unordered_map<unsigned long int, Doc>::iterator keyIndex = docIDMap.find(hostParent.id);
+            if(keyIndex == docIDMap.end()){
+                docIDMap[hostParent.id] = Doc(hostParent);
+            }
+
+            docIDMap[hostParent.id].addChild(docIDMap[hostChild.id]);
+
+            childIter = parentIter;
+
+            if(hostParent.isResultMember){
+                lastValidParent = &docIDMap[hostParent.id];
+                break;
+            }
+            parentIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
+                                         GetElementWithChild(thrust::raw_pointer_cast(&(*parentIter))));
+        }
+        if(lastValidParent) {
+            result.push_back(*lastValidParent);
+        }
+        iter = thrust::find_if(iter + 1, deviceEntries.end(),
+                               IsEntrySelected(beginLayer));
+    }
+}
 void GPUDBDriver::buildResultsBottomUp(std::vector<Doc> & result, const unsigned long int beginLayer){
     /*DeviceVector_t::iterator lastIter = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(),
                                                         deviceIntermediateBuffer1->begin(),
@@ -312,7 +366,6 @@ void GPUDBDriver::buildResultsBottomUp(std::vector<Doc> & result, const unsigned
             }
             parentIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
                                          GetElementWithChild(thrust::raw_pointer_cast(&(*parentIter))));
-
         }
         if(lastValidParent) {
             result.push_back(*lastValidParent);
