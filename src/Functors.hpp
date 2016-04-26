@@ -80,6 +80,18 @@ namespace GPUDB {
         const Entry * _validIndex;
     };
 
+    struct GetElementWithParentID : thrust::unary_function<Entry, bool>{
+        inline GetElementWithParentID(const unsigned long long int id): _desiredParentID(id) {}
+
+        __device__ __host__
+        inline bool operator()(const Entry & ival) const {
+            return _desiredParentID && _desiredParentID == ival.parentID;
+        }
+
+    private:
+        const unsigned long long int _desiredParentID;
+    };
+
     struct IsLayerNotEqualTo : thrust::unary_function<Entry, bool> {
         inline IsLayerNotEqualTo(const unsigned long int layer):_layer(layer){}
 

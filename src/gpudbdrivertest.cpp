@@ -94,11 +94,11 @@ void GPUDBDriverTest::runTests(){
             FilterSet toCheck;
             toCheck.push_back(filterGroup1);
             toCheck.push_back(filterGroup2);
-            std::vector<Doc> updatedElement = driver.getDocumentsForFilterSet(toCheck);
+            /*std::vector<Doc> updatedElement = driver.getDocumentsForFilterSet(toCheck);
             for(std::vector<Doc>::iterator updatedIter = updatedElement.begin();
                 updatedIter != updatedElement.end(); ++updatedIter){
                 printf("Updated value for id %llu = %lld\n", updatedIter->kvPair.id, updatedIter->kvPair.data.bigVal);
-            }
+            }*/
         }
     }
     t1 = clock();
@@ -122,6 +122,7 @@ void GPUDBDriverTest::runTests(){
 
     runDeepNestingTests();
     runTwoKeyTest();
+    runLargeResultTest();
 }
 
 void GPUDBDriverTest::runDeepNestingTests(){
@@ -220,6 +221,45 @@ void GPUDBDriverTest::runTwoKeyTest() {
     for(std::vector<Doc>::iterator iter = results.begin(); iter != results.end(); iter++){
         printf(iter->toString().c_str());
     }
+}
+
+void GPUDBDriverTest::runLargeResultTest() {
+    printf("Starting large result test:\n");
+
+    GPUDBDriver driver;
+
+    Entry ent1;
+    ent1.key[0] = 1;
+    ent1.key[1] = 2;
+    ent1.data.bigVal = 3;
+    ent1.parentID = 0;
+    ent1.id = 1;
+    ent1.valType = GPUDB_BGV;
+    Doc root(ent1);
+
+    for(unsigned long int i = 0; i < 100000; i++) {
+        Entry ent2 = ent1;
+        ent2.data.bigVal = 4;
+        ent2.id = i+2;
+        root.addChild(ent2);
+    }
+
+    driver.create(root);
+    driver.syncCreates();
+
+    FilterSet getRoot;
+    FilterGroup group;
+    group.resultMember = true;
+
+    Filter filter;
+    filter.entry.key[0] = 1;
+    filter.entry.key[1] = 2;
+    filter.entry.valType = GPUDB_BGV;
+    filter.comparator = KEY_ONLY;
+    group.group.push_back(filter);
+    getRoot.push_back(group);
+
+    std::vector<Doc> results = driver.getDocumentsForFilterSet(getRoot);
 }
 
 int main(int argc, char * argv[]){

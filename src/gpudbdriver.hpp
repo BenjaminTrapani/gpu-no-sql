@@ -10,6 +10,7 @@
 #include "thrust/device_vector.h"
 #include "thrust/host_vector.h"
 #include "FilterSet.hpp"
+#include "CPUAggregator.h"
 
 // Caller must free memory
 namespace GPUDB {
@@ -54,21 +55,23 @@ namespace GPUDB {
         unsigned long long int getDocumentID(const FilterSet & sourceFilters);
 
     private:
+        CPUAggregator cpuAggregator;
         size_t numEntries;
-        DeviceVector_t deviceEntries;
-
-        //DeviceVector_t * deviceIntermediateBuffer1;
-        HostVector_t * hostResultBuffer;
         HostVector_t * hostCreateBuffer;
+        HostVector_t * hostResultBuffer;
+        DeviceVector_t deviceEntries;
+        DeviceVector_t * intermediateBuffer;
 
         void optimizedSearchEntriesDown(const FilterGroup & filterGroup, const unsigned long int layer);
         void markValidRootsForLayer(const unsigned long long int beginLayer);
         unsigned long int internalGetDocsForFilterSet(const FilterSet &filters);
 
-        void getDocumentsForParent(Doc * parent, Entry * gpuRaw);
+        void getDocumentsForParent(Doc * parent);
         void getDocumentsForRoots(const unsigned long int rootLayer, std::vector<Doc> & result);
 
         std::vector<Doc> getEntriesForRoots(const InternalResult & rootResults);
+
+        float totalFindIfMs;
 
     };
 }
