@@ -17,8 +17,14 @@ int FilterMap::newFilter(FilterSet sourceDocFilter) {
         return -1;
     }
 
+    // Get a new ID
     int newID = openSpots.front();
+    openSpots.pop_front();
+
+    // Set Filters to the given and curGroups to the empty
     filters[newID] = sourceDocFilter;
+    curGroups[newID] = FilterGroup();
+
     return newID;
 }
 
@@ -27,10 +33,15 @@ FilterSet FilterMap::getFilter(int filterID) {
         FilterSet empty;
         return empty; // Invalid filter reference
     }
+
+    // Get a copy of the filters for this filter reference
     FilterSet curFilters = filters[filterID];
+
     if (curGroups[filterID].group.size() != 0) {
+        printf("Adding curGroups\n");
         curFilters.push_back(curGroups[filterID]);
     }
+
     return curFilters;
 }
 

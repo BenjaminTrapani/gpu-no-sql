@@ -33,7 +33,7 @@ int GPUDB_Database::getRootDoc() {
 
 // On Success: Returns an int from 0 to MAX_RESOURCES-1
 // Errors: -1, -5, -9
-int GPUDB_Database::getDoc(std::vector<std::string> & strings) {
+int GPUDB_Database::getDocReference(std::vector<std::string> & strings) {
     return docs.addDoc(strings);
 }
 
@@ -46,8 +46,10 @@ int GPUDB_Database::deleteDocRef(int docID) {
 // Creation
 
 // Creates a document inside the given doc from ID with key "key"
+// returns a new doc reference
 // Errors: -1, -2, -5, -9
 int GPUDB_Database::newDoc(int docID, std::string & key) {
+
     // Check for valid docID and create the new path
     std::vector<std::string> newPath = docs.getPath(docID);
     if (docID != 0 && newPath.empty()) {
@@ -66,19 +68,12 @@ int GPUDB_Database::newDoc(int docID, std::string & key) {
         return -5; // Invalid Key
     }
 
-    printf("Entry parent ID: %llu\n", newEntry.parentID);
-    printf("Entry ID: %llu\n", newEntry.id);
-    printf("Entry ValType: %i\n", newEntry.valType);
-    printf("Entry key 1: %lld\n", newEntry.key[0]);
-    printf("Entry key 2: %lld\n", newEntry.key[1]);
-
     // Add New Entry to database
-    printf("Adding entry\n");
     driver.create(newEntry);
     driver.syncCreates();
 
     // Get a docID for the path
-    int newDocID = getDoc(newPath);
+    int newDocID = getDocReference(newPath);
     if (newDocID < 0) {
         return newDocID; // bad path, no space, or invalid added key
     }
@@ -116,13 +111,6 @@ int GPUDB_Database::addToDocNoSync(unsigned long long int realDocID, std::string
     newEntry.valType = type;
     setEntryVal(newEntry, value, type);
 
-    printf("Entry parent ID: %llu\n", newEntry.parentID);
-    printf("Entry ID: %llu\n", newEntry.id);
-    printf("Entry ValType: %i\n", newEntry.valType);
-    printf("Entry key 1: %lld\n", newEntry.key[0]);
-    printf("Entry key 2: %lld\n", newEntry.key[1]);
-
-    printf("Adding Entry\n");
     driver.create(newEntry); // TODO add error code in driver?
 
     return 0;
@@ -185,7 +173,7 @@ int GPUDB_Database::newFilter(int docID) {
 
 // Adds the given key to the filter
 // Errors: -5, -6
-int GPUDB_Database::addToFilter(int filterID, std::string key) {
+int GPUDB_Database::addToFilter(int filterID, std::string key, GPUDB_Type & type) {
 
     // Translate key into an Entry for a search
     Entry newEntry;
@@ -193,7 +181,8 @@ int GPUDB_Database::addToFilter(int filterID, std::string key) {
     if (res != 0) {
         return -5; // Invalid Key
     }
-    newEntry.valType = GPUDB_DOC;
+    newEntry.valType = type;
+
     // Add new entry to given filter
     return filters.addToFilter(filterID, newEntry, KEY_ONLY);
 }
@@ -229,10 +218,15 @@ GPUDB_QueryResult GPUDB_Database::query(int filterID) {
     FilterSet toFilter = filters.getFilter(filterID);
     //printf("FilterSet size: %d\n", toFilter.size());
     //printf("First Filter Group Size: %d\n", toFilter.front().group.size());
+    clock_t t1, t2;
+    float timeDiff;
+    t1 = clock();
     std::vector<Doc> resultDoc = driver.getDocumentsForFilterSet(toFilter);
-    if (resultDoc.size() == 0) {
-        Doc emptyDoc;
-        return translateDoc(emptyDoc);
+    t2 = clock();
+    timeDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("Time Taken For Query Internal: %fms.\n", timeDiff);
+    if (resultDoc.size() != 1) {
+        return GPUDB_QueryResult();
     }
     return translateDoc(resultDoc[0]);
 }
@@ -244,8 +238,10 @@ GPUDB_QueryResult GPUDB_Database::translateDoc(Doc resultDoc) {
     GPUDB_KV newKV;
     newKV.key = StringConversion::intToString(resultDoc.kvPair.key);
     newKV.type = resultDoc.kvPair.valType;
-    newKV.value = dataToValue(resultDoc.kvPair.data, newKV.type);
-    userDoc.kv = &newKV;
+    if (newKV.type != GPUDB_DOC) {
+        newKV.value = dataToValue(resultDoc.kvPair.data, newKV.type);
+    }
+    userDoc.kv = newKV;
 
     // Handle the children
     if (!resultDoc.children.empty()) {

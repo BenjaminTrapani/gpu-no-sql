@@ -52,8 +52,8 @@ try:
         submission.expect(pexpect.EOF)
         print('copy to remote complete, running make check')
         runMakeCheck()
-        #print('copy to remote complete, running make topcheck')
-        #runMakeTopCheck()
+        print('copy to remote complete, running make topcheck')
+        runMakeTopCheck()
 
 except Exception as e:
     print e;
