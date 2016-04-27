@@ -90,7 +90,7 @@ void GPUDBDriver::syncCreates() {
 
 void GPUDBDriver::update(const Entry & searchFilter, const Entry & updates) {
     thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(), ModifyEntry(updates),
-                         IsFullEntryMatch(searchFilter));
+                         MatchEntryByID(searchFilter.id));
     cpuAggregator.onUpdate(searchFilter.id, updates);
 }
 
@@ -240,11 +240,15 @@ unsigned long int GPUDBDriver::internalGetDocsForFilterSet(const FilterSet &filt
         optimizedSearchEntriesDown(*iter, layer);
         layer++;
     }
-
-    markValidRootsForLayer(layer);
     t2 = clock();
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("    Selecting all for query took %fms\n", diff);
+
+    t1 = clock();
+    markValidRootsForLayer(layer);
+    t2 = clock();
+    diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
+    printf("    Marking valid roots took %fms\n", diff);
     return layer+1;
 }
 
@@ -328,9 +332,6 @@ void GPUDBDriver::getDocumentsForParent(Doc * parent){
 void GPUDBDriver::getDocumentsForRoots(const unsigned long int rootLayer, std::vector<Doc> & result){
     DeviceVector_t::iterator endPos = thrust::copy_if(deviceEntries.begin(), deviceEntries.end(), intermediateBuffer->begin(),
                     IsEntrySelected(rootLayer));
-
-    thrust::copy_if(deviceEntries.begin(), deviceEntries.end(), hostResultBuffer->begin(),
-                                                      IsEntrySelected(rootLayer));
 
     size_t numCopied = thrust::distance(intermediateBuffer->begin(), endPos);
 

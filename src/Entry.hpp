@@ -56,7 +56,8 @@ namespace GPUDB {
         }
 
         inline bool fullCompare(const Entry &other) const {
-            return other.id == id && other.key == key && other.valType == valType && other.data.bigVal == data.bigVal &&
+            return other.id == id && other.key[0] == key[0] && other.key[1]==key[1] && other.valType == valType &&
+                    other.data.bigVal == data.bigVal &&
                    other.parentID == parentID;
         }
 
