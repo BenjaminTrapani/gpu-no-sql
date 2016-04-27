@@ -32,13 +32,16 @@ void printIndent(int indent) {
 }
 
 void printResults(GPUDB_QueryResult result, int indent) {
-    GPUDB_KV *kv = result.kv;
-    if (kv->key.size() != 0) {
-        GPUDB_KV *kv = result.kv;
+    GPUDB_KV kv = result.kv;
+    if (kv.key.size() != 0) {
         printIndent(indent);
-        printf("Key: %s, ", kv->key.c_str());
-        printIndent(indent);
-        printValue(kv->value, kv->type);
+        printf("Key: %s, ", kv.key.c_str());
+        printf("Type: %d, ", kv.type);
+        if (kv.type != GPUDB_DOC) {
+            printValue(kv.value, kv.type);
+        } else {
+            printf("\n");
+        }
 
         // Handle the children
         if (!result.children.empty()) {
@@ -68,36 +71,37 @@ int main() {
 
     int rootID = database.getRootDoc();
 
-    printf("Number of entries: %d\n", database.driver.getNumEntries());
-
     int firstDoc = database.newDoc(rootID, testName);
-    printf("new created doc ID: %d\n", firstDoc);
-
-    printf("Number of entries: %d\n", database.driver.getNumEntries());
+    printf("new created doc reference: %d\n", firstDoc);
 
     int res = database.addToDoc(firstDoc, testName2, testVal, intType);
-    printf("Result of add: %d\n", res);
+    printf("Result of add to the reference: %d\n", res);
 
-    printf("Number of entries: %d\n", database.driver.getNumEntries());
+    int resTotal = 0;
+    for (int i = 0; i < 10; i += 1) {
+        testVal.n += 1;
+        resTotal += database.addToDoc(firstDoc, testName2, testVal, intType);
+    }
+    printf("Many adds error total: %d\n", resTotal);
 
-//    int resTotal = 0;
-//    for (int i = 0; i < 10; i += 1) {
-//        testVal.n += 1;
-//        resTotal += database.addToDoc(firstDoc, testName2, testVal, intType);
-//    }
-//    printf("Many adds error total: %d", resTotal);
+    int newFilterRef = database.newFilter(firstDoc);
+    printf("Filter ID: %d\n", newFilterRef);
 
-    int newFilter = database.newFilter(firstDoc);
-    //database.addToFilter(newFilter, testName);
+    GPUDB_Value testVal2;
+    testVal2.n = 11;
+
+    int addFilterRes = database.addToFilter(newFilterRef, testName2, intType);
+    //int addFilterRes = database.addToFilter(newFilterRef, testName2, testVal2, intType, EQ);
+    printf("Add Filter Result: %d\n", addFilterRes);
 
     t1 = clock();
     printf("\n\nResults: \n");
-    printResults(database.query(newFilter), 0);
+    GPUDB_QueryResult finalResult = database.query(newFilterRef);
     t2 = clock();
     timeDiff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
     printf("Time Taken For Query: %fms.\n", timeDiff);
 
-    printf("Number of entries: %d\n", database.driver.getNumEntries());
+    printResults(finalResult, 0);
 
     return 0;
 }

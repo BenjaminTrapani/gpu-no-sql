@@ -25,7 +25,7 @@ public:
 
     // Document Identification
     int getRootDoc();
-    int getDoc(std::vector<std::string> & strings);
+    int getDocReference(std::vector<std::string> & strings);
     int deleteDocRef(int docID);
 
     // Creation
@@ -36,7 +36,7 @@ public:
     // Filter Creation and Editing
 
     int newFilter(int docID);
-    int addToFilter(int filterID, std::string key);
+    int addToFilter(int filterID, std::string key, GPUDB_Type & type);
     int addToFilter(int filterID, std::string key, GPUDB_Value & value, GPUDB_Type & type, GPUDB_COMP comp);
     int advanceFilter(int filterID);
     int deleteFilter(int filterID);

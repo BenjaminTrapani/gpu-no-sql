@@ -224,39 +224,6 @@ void GPUDBDriverTest::runTwoKeyTest() {
     for(std::vector<Doc>::iterator iter = results.begin(); iter != results.end(); iter++){
         printf(iter->toString().c_str());
     }
-    /*Entry ent1;
-    ent1.key[0] = 1;
-    ent1.key[1] = 2;
-    ent1.data.bigVal = 3;
-    ent1.parentID = 0;
-    ent1.id = 1;
-    ent1.valType = GPUDB_BGV;
-    Doc root(ent1);
-
-    Entry ent2 = ent1;
-    ent2.data.bigVal = 4;
-    ent2.id = 2;
-    root.addChild(ent2);
-
-    driver.create(root);
-    driver.syncCreates();
-
-    FilterSet getRoot;
-    FilterGroup group;
-    group.resultMember = true;
-
-    Filter filter;
-    filter.entry.key[0] = 1;
-    filter.entry.key[1] = 2;
-    filter.entry.valType = GPUDB_BGV;
-    filter.comparator = KEY_ONLY;
-    group.group.push_back(filter);
-    getRoot.push_back(group);
-
-    std::vector<Doc> results = driver.getDocumentsForFilterSet(getRoot);
-    for(std::vector<Doc>::iterator iter = results.begin(); iter != results.end(); iter++){
-        printf(iter->toString().c_str());
-    }*/
 }
 
 void GPUDBDriverTest::runLargeResultTest() {

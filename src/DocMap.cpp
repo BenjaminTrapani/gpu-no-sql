@@ -45,28 +45,25 @@ int DocMap::addDoc(std::vector <std::string> strings) {
     for (int i = 0; i < strings.size(); i += 1) {
         FilterGroup g;
 
-        // Create the entry
-        Entry newEntry;
-        newEntry.valType = GPUDB_DOC;
-        int res = StringConversion::stringToInt(newEntry.key, strings.at(i));
-        if (res != 0) {
-            return -5; // Invalid Key
-        }
-
-        // Create the filter
-        Filter newFilter;
-        newFilter.entry = newEntry;
-        newFilter.comparator = KEY_ONLY;
-
-        // Add the entry to the group
-        g.group.push_back(newFilter);
-
         // If Last, Set as the result set
         if (i == strings.size() - 1) {
             g.resultMember = true;
         } else {
             g.resultMember = false;
         }
+
+        // Create the filter
+        Filter newFilter;
+        int res = StringConversion::stringToInt(newFilter.entry.key, strings.at(i));
+        if (res != 0) {
+            return -5; // Invalid Key
+        }
+        newFilter.entry.valType = GPUDB_DOC;
+
+        newFilter.comparator = KEY_ONLY;
+
+        // Add the entry to the group
+        g.group.push_back(newFilter);
 
         // Add the group to the set
         newFilterSet.push_back(g);
@@ -77,12 +74,13 @@ int DocMap::addDoc(std::vector <std::string> strings) {
         removeDoc(place);
         return -9; // Bad Path
     }
-    //printf("Actual Doc ID: %d\n", actualDocID);
 
     // Add it to filter set spot
     filters[place] = newFilterSet;
     // get documentID and add it to doc spot
     docs[place] = actualDocID;
+    // add the path
+    paths[place] = strings;
     // return the place
     return place;
 }
