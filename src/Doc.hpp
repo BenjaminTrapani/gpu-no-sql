@@ -27,7 +27,7 @@ namespace GPUDB {
         std::string toString(){
             std::stringstream sstream;
             sstream << "id: " << kvPair.id << std::endl;
-            sstream << "  key: " << kvPair.key << std::endl;
+            sstream << "  key: " << kvPair.key[0] << " " << kvPair.key[1] << std::endl;
             sstream << "  value: " << kvPair.data.bigVal << std::endl;
             sstream << "  parentid: " << kvPair.parentID << std::endl;
             for(std::list<Doc>::iterator iter = children.begin(); iter != children.end(); ++iter){
