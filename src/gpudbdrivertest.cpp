@@ -17,24 +17,26 @@ void GPUDBDriverTest::runTests(){
     Entry realLastEntry;
     for (unsigned int i = 0; i < driver.getTableSize()-3; i++) {
         Entry anEntry;
-        anEntry.data.bigVal=0;
+        anEntry.data.bigVal = 0;
         anEntry.valType = GPUDB_BGV;
         EntryUtils::assignKeyToEntry(anEntry, i);
         anEntry.id = i;
-        Doc * perm = coreDoc.addChild(anEntry);
+        Doc *perm = coreDoc.addChild(anEntry);
         if(i == 3) {
             lastEntry.valType = GPUDB_BGV;
+            lastEntry.id = i+1;
             lastEntry.data.bigVal = 1;
             EntryUtils::assignKeyToEntry(lastEntry, 10);
-            lastEntry.parentID = 3;
             perm->children.push_back(lastEntry);
-        } else if (i == 6) {
+            i++;
+        } else if (i == 50) {
             realLastEntry.valType = GPUDB_BGV;
-            realLastEntry.id = 51;
+            realLastEntry.id = i+1;
             realLastEntry.data.bigVal = 1;
             EntryUtils::assignKeyToEntry(realLastEntry, 10);
             realLastEntry.parentID = 6;
             perm->children.push_back(realLastEntry);
+            i++;
         }
     }
     clock_t t1, t2;
@@ -79,26 +81,22 @@ void GPUDBDriverTest::runTests(){
             printf("  child id = %llu\n", nestedIter->kvPair.id);
             Entry newEntry = nestedIter->kvPair;
             newEntry.data.bigVal = 52;
+            newEntry.valType = GPUDB_BGV;
+            newEntry.id = nestedIter->kvPair.id;
             t1 = clock();
             driver.update(nestedIter->kvPair, newEntry);
             t2 = clock();
             float diff2 = ((float)(t2 - t1) / 1000000.0F ) * 1000;
             printf("update single element latency = %fms\n", diff2);
 
-            FilterGroup filterGroup1;
-            filterGroup1.group.push_back(Filter(iter->kvPair, EQ));
-            filterGroup1.resultMember = false;
-            FilterGroup filterGroup2;
-            filterGroup2.group.push_back(Filter(newEntry, EQ));
-            filterGroup2.resultMember = true;
-            FilterSet toCheck;
-            toCheck.push_back(filterGroup1);
-            toCheck.push_back(filterGroup2);
-            /*std::vector<Doc> updatedElement = driver.getDocumentsForFilterSet(toCheck);
+            filterSet[1].resultMember=true;
+            filterSet[1].group[0].entry = newEntry;
+            filterSet[0].resultMember=false;
+            std::vector<Doc> updatedElement = driver.getDocumentsForFilterSet(filterSet);
             for(std::vector<Doc>::iterator updatedIter = updatedElement.begin();
                 updatedIter != updatedElement.end(); ++updatedIter){
                 printf("Updated value for id %llu = %lld\n", updatedIter->kvPair.id, updatedIter->kvPair.data.bigVal);
-            }*/
+            }
         }
     }
     t1 = clock();
@@ -108,6 +106,7 @@ void GPUDBDriverTest::runTests(){
 
     FilterGroup searchForLastEntry;
     searchForLastEntry.group.push_back(Filter(lastEntry, EQ));
+    searchForLastEntry.resultMember = true;
     FilterSet searchForLastEntryFilter;
     searchForLastEntryFilter.push_back(searchForLastEntry);
     std::vector<Doc> lastEntryResult = driver.getDocumentsForFilterSet(searchForLastEntryFilter);

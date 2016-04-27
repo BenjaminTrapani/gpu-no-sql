@@ -41,17 +41,24 @@ void CPUAggregator::onEntryCreate(const Entry &toCreate) {
 
 //update is not allowed to change parentid or id.
 void CPUAggregator::onUpdate(const unsigned long long int id, const Entry & updatedVal){
-    idToEntryMap[id] = updatedVal;
+    idToEntryMap[id].data.bigVal = updatedVal.data.bigVal;
+    idToEntryMap[id].valType = updatedVal.valType;
 }
 
 void CPUAggregator::onDelete(const unsigned long long int id){
-    Entry * oldEntry = &idToEntryMap[id];
-    idToChildIdsMap.erase(idToChildIdsMap.find(id));
+    if(idToEntryMap.find(id) != idToEntryMap.end()) {
+        Entry *oldEntry = &idToEntryMap[id];
+        IDToChildIDsMap_t::iterator childListPos = idToChildIdsMap.find(id);
 
-    std::list<unsigned long long int>::iterator staleChildPos =
-            std::find(idToChildIdsMap[oldEntry->parentID].begin(), idToChildIdsMap[oldEntry->parentID].end(),
-                            id);
-    idToChildIdsMap[oldEntry->parentID].erase(staleChildPos);
+        if (childListPos != idToChildIdsMap.end()) {
+            idToChildIdsMap.erase(idToChildIdsMap.find(id));
+        }
 
-    idToEntryMap.erase(idToEntryMap.find(id));
+        std::list<unsigned long long int>::iterator staleChildPos =
+                std::find(idToChildIdsMap[oldEntry->parentID].begin(), idToChildIdsMap[oldEntry->parentID].end(),
+                          id);
+        idToChildIdsMap[oldEntry->parentID].erase(staleChildPos);
+
+        idToEntryMap.erase(idToEntryMap.find(id));
+    }
 }
