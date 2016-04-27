@@ -122,6 +122,7 @@ void GPUDBDriverTest::runTests(){
     runDeepNestingTests();
     runTwoKeyTest();
     runLargeResultTest();
+    runBalloonTest();
 }
 
 void GPUDBDriverTest::runDeepNestingTests(){
@@ -259,6 +260,83 @@ void GPUDBDriverTest::runLargeResultTest() {
     getRoot.push_back(group);
 
     std::vector<Doc> results = driver.getDocumentsForFilterSet(getRoot);
+}
+
+void GPUDBDriverTest::runBalloonTest() {
+    printf("Starting balloon test:\n");
+
+    GPUDBDriver driver;
+
+    Entry ent1;
+    ent1.key[0] = 1;
+    ent1.key[1] = 2;
+    ent1.data.bigVal = 3;
+    ent1.parentID = 0;
+    ent1.id = 1;
+    ent1.valType = GPUDB_BGV;
+    Doc root(ent1);
+
+    for(unsigned long int i = 0; i < 100000; i++) {
+        Entry ent2;
+        ent2.id = i+2;
+        ent2.key[0] = 3;
+        ent2.key[1] = 4;
+        ent2.data.bigVal = 5;
+        ent2.valType = GPUDB_BGV;
+        Doc * perm = root.addChild(ent2);
+        if(i == 100){
+            Entry lowestNode;
+            lowestNode.id = i+3; //103
+            lowestNode.key[0] = 5;
+            lowestNode.key[1] = 6;
+            lowestNode.valType = GPUDB_BGV;
+            lowestNode.data.bigVal = 14;
+            perm->addChild(Doc(lowestNode));
+            i++;
+        }
+    }
+
+    driver.create(root);
+    driver.syncCreates();
+
+    FilterSet balloonSet;
+    FilterGroup rootGroup;
+    rootGroup.resultMember = false;
+
+    Filter filter;
+    filter.entry.key[0] = 1;
+    filter.entry.key[1] = 2;
+    filter.entry.valType = GPUDB_BGV;
+    filter.comparator = KEY_ONLY;
+    rootGroup.group.push_back(filter);
+    balloonSet.push_back(rootGroup);
+
+    FilterGroup middleGroup;
+    middleGroup.resultMember = true;
+    Filter middleFilter;
+    middleFilter.entry.key[0] = 3;
+    middleFilter.entry.key[1] = 4;
+    middleFilter.entry.valType = GPUDB_BGV;
+    middleFilter.comparator = KEY_ONLY;
+    middleGroup.group.push_back(middleFilter);
+    balloonSet.push_back(middleGroup);
+
+    FilterGroup lowestNodeGroup;
+    lowestNodeGroup.resultMember = false;
+    Filter lowestNodeFilter;
+    lowestNodeFilter.comparator = KEY_ONLY;
+    lowestNodeFilter.entry.key[0] = 5;
+    lowestNodeFilter.entry.key[1] = 6;
+    lowestNodeFilter.entry.valType = GPUDB_BGV;
+    lowestNodeGroup.group.push_back(lowestNodeFilter);
+    balloonSet.push_back(lowestNodeGroup);
+
+    std::vector<Doc> results = driver.getDocumentsForFilterSet(balloonSet);
+
+    for(std::vector<Doc>::iterator iter = results.begin(); iter != results.end(); ++iter){
+        printf(iter->toString().c_str());
+    }
+    printf("Balloon test finished.\n");
 }
 
 int main(int argc, char * argv[]){
