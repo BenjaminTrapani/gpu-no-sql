@@ -64,13 +64,14 @@ GPUDBDriver::~GPUDBDriver() {
 
 void GPUDBDriver::create(const Doc & toCreate) {
     create(toCreate.kvPair);
-    cpuAggregator.onEntryCreate(toCreate.kvPair);
+    //cpuAggregator.onEntryCreate(toCreate.kvPair);
     for (std::list<Doc>::const_iterator iter = toCreate.children.begin(); iter != toCreate.children.end(); ++iter) {
         create(*iter);
     }
 }
 
 void GPUDBDriver::create(const Entry &object) {
+    cpuAggregator.onEntryCreate(object);
     hostCreateBuffer->push_back(object);
 }
 
