@@ -189,20 +189,23 @@ void GPUDBDriverTest::runTwoKeyTest() {
     GPUDBDriver driver;
 
     Entry ent1;
-    ent1.key[0] = 1;
-    ent1.key[1] = 2;
-    ent1.data.bigVal = 3;
+    ent1.key[0] = 555;
+    ent1.key[1] = 555;
     ent1.parentID = 0;
     ent1.id = 1;
-    ent1.valType = GPUDB_BGV;
-    Doc root(ent1);
+    ent1.valType = GPUDB_DOC;
 
     Entry ent2 = ent1;
-    ent2.data.bigVal = 4;
+    ent2.data.n = 1;
+    ent2.key[0] = 555;
+    ent2.key[1] = 555;
     ent2.id = 2;
-    root.addChild(ent2);
+    ent2.parentID = 1;
+    ent2.data.n = 1;
+    ent2.valType = GPUDB_INT;
 
-    driver.create(root);
+    driver.create(ent1);
+    driver.create(ent2);
     driver.syncCreates();
 
     FilterSet getRoot;
@@ -210,9 +213,9 @@ void GPUDBDriverTest::runTwoKeyTest() {
     group.resultMember = true;
 
     Filter filter;
-    filter.entry.key[0] = 1;
-    filter.entry.key[1] = 2;
-    filter.entry.valType = GPUDB_BGV;
+    filter.entry.key[0] = 555;
+    filter.entry.key[1] = 555;
+    filter.entry.valType = GPUDB_DOC;
     filter.comparator = KEY_ONLY;
     group.group.push_back(filter);
     getRoot.push_back(group);

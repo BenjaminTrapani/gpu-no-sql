@@ -345,19 +345,18 @@ std::vector<Doc> GPUDBDriver::getDocumentsForFilterSet(const FilterSet & filters
     unsigned long int finalLevel = internalGetDocsForFilterSet(filters);
     t2 = clock();
     float diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("  Select matches took %fms\n", diff);
+    //printf("  Select matches took %fms\n", diff);
     std::vector<Doc> result;
     t1 = clock();
     getDocumentsForRoots(finalLevel, result);
     t2 = clock();
     diff = ((float)(t2 - t1) / 1000000.0F ) * 1000;
-    printf("  Build results took %fms\n", diff);
+    //printf("  Build results took %fms\n", diff);
     return result;
 }
 
 unsigned long long int GPUDBDriver::getDocumentID(const FilterSet & sourceFilters) {
     std::vector<Doc> result = getDocumentsForFilterSet(sourceFilters);
-    printf("Get Document ID Result Size: %d\n", result.size());
 
     if (result.size() == 1) {
         return result[0].kvPair.id;

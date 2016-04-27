@@ -18,7 +18,7 @@ namespace GPUDB {
     };
 
     typedef struct QueryResult {
-        GPUDB_KV *kv;
+        GPUDB_KV kv;
         std::list<QueryResult> children;
     } GPUDB_QueryResult;
 }
