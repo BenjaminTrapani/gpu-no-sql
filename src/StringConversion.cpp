@@ -15,31 +15,20 @@ int StringConversion::stringToInt(long long int *dest, const std::string & src) 
         return -1; // input string too big
     }
 
-    union TempConverter {
-        char from[MAX_STRING_SIZE];
-        long long int to[STRING_SIZE_INT];
-    };
+    const char *srcString = src.c_str();
 
-    // TODO get working
-    //TempConverter converter;
-    //memcpy(converter.from, src.c_str(), sizeof(converter.from));
-    //memcpy(dest, converter.to, sizeof(converter.to));
+    char *srcBits = (char*) calloc(MAX_STRING_SIZE, sizeof(char));
 
-    dest[0] = 555;
-    dest[1] = 555;
+    memcpy(srcBits, srcString, sizeof(char) * src.size()+1);
 
+    memcpy(dest, srcBits, sizeof(char) * MAX_STRING_SIZE);
     return 0;
 }
 
 std::string StringConversion::intToString(const long long int *src) {
-    union TempConverter {
-        char to[MAX_STRING_SIZE];
-        long long int from[STRING_SIZE_INT];
-    };
+    char *endStr = (char*) calloc(MAX_STRING_SIZE, sizeof(char));
 
-    //TempConverter converter;
-    //memcpy(converter.from, src, sizeof(converter.from));
+    memcpy(endStr, src, sizeof(char) * MAX_STRING_SIZE);
 
-    //return std::string(converter.to);
-    return std::string("placeholder"); // TODO
+    return std::string(endStr);
 }
