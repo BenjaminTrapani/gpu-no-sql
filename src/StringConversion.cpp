@@ -22,6 +22,9 @@ int StringConversion::stringToInt(long long int *dest, const std::string & src) 
     memcpy(srcBits, srcString, sizeof(char) * src.size()+1);
 
     memcpy(dest, srcBits, sizeof(char) * MAX_STRING_SIZE);
+
+    free(srcBits);
+
     return 0;
 }
 
@@ -29,6 +32,8 @@ std::string StringConversion::intToString(const long long int *src) {
     char *endStr = (char*) calloc(MAX_STRING_SIZE, sizeof(char));
 
     memcpy(endStr, src, sizeof(char) * MAX_STRING_SIZE);
+
+    free(endStr);
 
     return std::string(endStr);
 }

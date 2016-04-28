@@ -10,7 +10,7 @@
 using namespace GPUDB;
 
 void GPUDBDriverTest::runTests(){
-    runBasicTest();
+    runBasicTests();
     //runDeepNestingTests();
     //runTwoKeyTest();
     //runLargeResultTest();
