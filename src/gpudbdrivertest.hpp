@@ -10,6 +10,7 @@ class GPUDBDriverTest{
 public:
     void runTests();
 private:
+    void runBasicTests();
     void runDeepNestingTests();
     void runTwoKeyTest();
     void runLargeResultTest();
