@@ -16,7 +16,7 @@ void GPUDBDriverTest::runTests(){
     //runLargeResultTest();
 }
 
-void GPUDBDriverTest::runBasicTest() {
+void GPUDBDriverTest::runBasicTests() {
     GPUDBDriver driver;
     printf("sizeof entry = %i\n", sizeof(Entry));
     Doc coreDoc;
