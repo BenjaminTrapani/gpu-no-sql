@@ -99,6 +99,34 @@ void GPUDBDriver::deleteBy(const Entry & searchFilter) {
     cpuAggregator.onDelete(searchFilter.id);
 }
 
+template <class Comparator_t>
+__global__ void interstageJoinDownInner(const Entry * entry,  const Entry * curDeviceEntries, const int numEntries,
+                                        const int srcLevel,
+                                        Comparator_t comparator){
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if(idx < numEntries){
+        Entry * lowerEntry = curDeviceEntries[idx];
+        bool isJoined = lowerEntry->parentID == entry->id && comparator(lowerEntry);
+        if(isJoined){
+            lowerEntry->layer = srcLevel + 1;
+            lowerEntry->selected = true;
+        }
+    }
+}
+template<class Comparator_t>
+__global__ void interstageJoinDown(const Entry * curDeviceEntries, const int numEntries,
+                                   const int srcLevel, const Comparator_t comparator,
+                                    const int childBlocks, const int threadsPerBlock){
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if(idx < numEntries){
+        const Entry * entryAt = curDeviceEntries[idx];
+        if(entryAt->selected && entryAt->layer==srcLevel){
+            //launch inner kernel with parameter entryAt as parent
+            interstageJoinDownInner<<<childBlocks, threadsPerBlock>>>(entryAt, curDeviceEntries, numEntries,
+                                                                        srcLevel, comparator);
+        }
+    }
+}
 
 void GPUDBDriver::optimizedSearchEntriesDown(const FilterGroup & filterGroup, const unsigned long int layer) {
     for (FilterGroup::const_iterator filterIter = filterGroup.group.begin(); filterIter != filterGroup.group.end();
