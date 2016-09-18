@@ -30,6 +30,7 @@ GPUDBDriver::GPUDBDriver() {
         printf("  GPU Memory (GB): %f\n", ((float)prop.totalGlobalMem)/((float)(gb)));
         printf("  Peak Memory Bandwidth (GB/s): %f\n",
                2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
+        printf("  Multiprocessor count: %i\n", prop.multiProcessorCount);
 
     }
 
@@ -39,6 +40,9 @@ GPUDBDriver::GPUDBDriver() {
     size_t allocSize = memBytes*0.12f; //0.12
     numEntries = allocSize/sizeof(Entry);
     printf("Num entries = %i\n", numEntries);
+
+    threadCount = propOfInterest.multiProcessorCount;
+    printf("Thread count = %i\n", threadCount);
 
     //buffer allocation and initialization
     deviceEntries.reserve(numEntries);
@@ -100,13 +104,13 @@ void GPUDBDriver::deleteBy(const Entry & searchFilter) {
 }
 
 template <class Comparator_t>
-__global__ void interstageJoinDownInner(const Entry * entry,  const Entry * curDeviceEntries, const int numEntries,
+__global__ void interstageJoinDownInner(const Entry * entry, Entry * curDeviceEntries, const int numEntries,
                                         const int srcLevel,
                                         Comparator_t comparator){
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx < numEntries){
-        Entry * lowerEntry = curDeviceEntries[idx];
-        bool isJoined = lowerEntry->parentID == entry->id && comparator(lowerEntry);
+        Entry * lowerEntry = &curDeviceEntries[idx];
+        bool isJoined = lowerEntry->parentID == entry->id && comparator(*lowerEntry);
         if(isJoined){
             lowerEntry->layer = srcLevel + 1;
             lowerEntry->selected = true;
@@ -114,12 +118,12 @@ __global__ void interstageJoinDownInner(const Entry * entry,  const Entry * curD
     }
 }
 template<class Comparator_t>
-__global__ void interstageJoinDown(const Entry * curDeviceEntries, const int numEntries,
+__global__ void interstageJoinDown(Entry * curDeviceEntries, const int numEntries,
                                    const int srcLevel, const Comparator_t comparator,
                                     const int childBlocks, const int threadsPerBlock){
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx < numEntries){
-        const Entry * entryAt = curDeviceEntries[idx];
+        Entry * entryAt = &curDeviceEntries[idx];
         if(entryAt->selected && entryAt->layer==srcLevel){
             //launch inner kernel with parameter entryAt as parent
             interstageJoinDownInner<<<childBlocks, threadsPerBlock>>>(entryAt, curDeviceEntries, numEntries,
@@ -129,78 +133,81 @@ __global__ void interstageJoinDown(const Entry * curDeviceEntries, const int num
 }
 
 void GPUDBDriver::optimizedSearchEntriesDown(const FilterGroup & filterGroup, const unsigned long int layer) {
+    unsigned int blockCount = (deviceEntries.size() + threadCount) / threadCount;
     for (FilterGroup::const_iterator filterIter = filterGroup.group.begin(); filterIter != filterGroup.group.end();
          ++filterIter) {
-        DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
+        /*DeviceVector_t::iterator lastIter = thrust::find_if(deviceEntries.begin(), deviceEntries.end(),
                                                             IsEntrySelected(layer));
-        while (lastIter != deviceEntries.end()) {
+        while (lastIter != deviceEntries.end()) {*/
             switch (filterIter->comparator){
                 case GREATER:{
-                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                    interstageJoinDown<<<blockCount, threadCount>>>(thrust::raw_pointer_cast(deviceEntries.data()), deviceEntries.size(),
+                                            layer, IsEntryGreater(filterIter->entry), blockCount, threadCount);
+                    /*thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
                                          SelectEntry(layer+1, filterGroup.resultMember),
                                          FetchEntryWithChildID<IsEntryGreater>(IsEntryGreater(filterIter->entry),
                                                                thrust::raw_pointer_cast(&(*lastIter))
-                                         ));
+                                         ));*/
                     break;
                 }
                 case GREATER_EQ:{
-                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                    /*thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
                                          SelectEntry(layer+1, filterGroup.resultMember),
                                          FetchEntryWithChildID<IsEntryGreaterEQ>(IsEntryGreaterEQ(filterIter->entry),
                                                                thrust::raw_pointer_cast(&(*lastIter))
-                                         ));
+                                         ));*/
                     break;
                 }
                 case EQ:{
-                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                    /*thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
                                          SelectEntry(layer+1, filterGroup.resultMember),
                                          FetchEntryWithChildID<IsPartialEntryMatch>(IsPartialEntryMatch(filterIter->entry),
                                                                thrust::raw_pointer_cast(&(*lastIter))
-                                         ));
+                                         ));*/
                     break;
                 }
                 case LESS_EQ:{
-                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                    /*thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
                                          SelectEntry(layer+1, filterGroup.resultMember),
                                          FetchEntryWithChildID<IsEntryLessEQ>(IsEntryLessEQ(filterIter->entry),
                                                                thrust::raw_pointer_cast(&(*lastIter))
-                                         ));
+                                         ));*/
                     break;
                 }
                 case LESS:{
-                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                    /*thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
                                          SelectEntry(layer+1, filterGroup.resultMember),
                                          FetchEntryWithChildID<IsEntryLess>(IsEntryLess(filterIter->entry),
                                                                thrust::raw_pointer_cast(&(*lastIter))
-                                         ));
+                                         ));*/
                     break;
                 }
                 case KEY_ONLY:{
-                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                    /*thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
                                          SelectEntry(layer+1, filterGroup.resultMember),
                                          FetchEntryWithChildID<EntryKeyMatch>(EntryKeyMatch(filterIter->entry),
                                                                thrust::raw_pointer_cast(&(*lastIter))
-                                         ));
+                                         ));*/
                     break;
                 }
                 case VAL_ONLY:{
-                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                    /*thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
                                          SelectEntry(layer+1, filterGroup.resultMember),
                                          FetchEntryWithChildID<EntryValMatch>(EntryValMatch(filterIter->entry),
                                                                thrust::raw_pointer_cast(&(*lastIter))
-                                         ));
+                                         ));*/
                     break;
                 }
                 default:{
-                    thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
+                    /*thrust::transform_if(deviceEntries.begin(), deviceEntries.end(), deviceEntries.begin(),
                                          SelectEntry(layer+1, filterGroup.resultMember),
                                          FetchEntryWithChildID<IsPartialEntryMatch>(IsPartialEntryMatch(filterIter->entry),
                                                                thrust::raw_pointer_cast(&(*lastIter))
-                                         ));
+                                         ));*/
                 }
-            }
+            //}
 
-            lastIter = thrust::find_if(lastIter+1, deviceEntries.end(), IsEntrySelected(layer));
+            //lastIter = thrust::find_if(lastIter+1, deviceEntries.end(), IsEntrySelected(layer));
         }
     }
 }

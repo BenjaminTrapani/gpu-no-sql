@@ -61,6 +61,8 @@ namespace GPUDB {
         HostVector_t * hostResultBuffer;
         DeviceVector_t deviceEntries;
         DeviceVector_t * intermediateBuffer;
+        float totalFindIfMs;
+        unsigned int threadCount;
 
         void optimizedSearchEntriesDown(const FilterGroup & filterGroup, const unsigned long int layer);
         void markValidRootsForLayer(const unsigned long long int beginLayer);
@@ -70,8 +72,6 @@ namespace GPUDB {
         void getDocumentsForRoots(const unsigned long int rootLayer, std::vector<Doc> & result);
 
         std::vector<Doc> getEntriesForRoots(const InternalResult & rootResults);
-
-        float totalFindIfMs;
 
     };
 }
