@@ -1,0 +1,16 @@
+Work Needed Summary
+
+Error Report:
+In DocMap.addDoc()
+    // add the path
+    paths[place] = strings;
+Needed: Rename getDoc()'s to be more descriptive
+
+
+Next Steps
+    Resource Management
+        Safer Reference Deletes
+        Better Validity Checks
+    Wildcard Doc Filter
+    And and Or Type in FilterGroups
+        User Accessible

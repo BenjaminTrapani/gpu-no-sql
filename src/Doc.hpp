@@ -4,10 +4,10 @@
 
 #ifndef GPU_NO_SQL_DOC_H
 #define GPU_NO_SQL_DOC_H
-#include <vector>
+#include <list>
 #include <string>
 #include <sstream>
-#include "Entry.h"
+#include "Entry.hpp"
 
 namespace GPUDB {
     class Doc {
@@ -18,19 +18,19 @@ namespace GPUDB {
 
         Doc * addChild(const Doc & child){
             children.push_back(child);
-            children.at(children.size()-1).kvPair.parentID = kvPair.id;
-            Doc * permResult = &children[children.size()-1];
+            Doc * permResult = &children.back();
             permResult->parent = this;
+            permResult->kvPair.parentID = kvPair.id;
             return permResult;
         }
 
         std::string toString(){
             std::stringstream sstream;
             sstream << "id: " << kvPair.id << std::endl;
-            sstream << "  key: " << kvPair.key << std::endl;
+            sstream << "  key: " << kvPair.key[0] << " " << kvPair.key[1] << std::endl;
             sstream << "  value: " << kvPair.data.bigVal << std::endl;
             sstream << "  parentid: " << kvPair.parentID << std::endl;
-            for(std::vector<Doc>::iterator iter = children.begin(); iter != children.end(); ++iter){
+            for(std::list<Doc>::iterator iter = children.begin(); iter != children.end(); ++iter){
                 sstream << "  child " << std::distance(children.begin(), iter) << std::endl;
                 sstream << iter->toString();
             }
@@ -39,7 +39,7 @@ namespace GPUDB {
 
         Doc * parent;
         Entry kvPair;
-        std::vector<Doc> children;
+        std::list<Doc> children;
     };
 }
 

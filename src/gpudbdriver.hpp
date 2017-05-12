@@ -5,11 +5,12 @@
 #ifndef SRC_GPUDBDRIVER_H
 #define SRC_GPUDBDRIVER_H
 
-#include "Entry.h"
-#include "Doc.h"
+#include "Entry.hpp"
+#include "Doc.hpp"
 #include "thrust/device_vector.h"
 #include "thrust/host_vector.h"
 #include "FilterSet.hpp"
+#include "CPUAggregator.h"
 
 // Caller must free memory
 namespace GPUDB {
@@ -31,22 +32,10 @@ namespace GPUDB {
         ~GPUDBDriver();
 
         void create(const Doc & toCreate);
-        void createSync(const Doc & toCreate);
-
         void create(const Entry &object);
-        void createEntries(const std::vector<Entry> entries);
-
         void batchCreate(std::vector<Doc> & docs);
-
         void syncCreates();
 
-        // TODO
-        // needed functionality:
-        // Search Top Down including the place of the first resultMember flag as the result
-        // 1. Run the original filters to get the roots
-        // 2. call getDocumentID with sourceFilters
-        // 3. Remove all roots that do not match this parent ID - GPU Operation?
-        // 4. Run get roots procedure as normal and return result
         std::vector<Doc> getDocumentsForFilterSet(const FilterSet & filters);
 
         void update(const Entry & searchFilter, const Entry &updates);
@@ -61,37 +50,26 @@ namespace GPUDB {
             return deviceEntries.size();
         }
 
-        // TODO
         // return the id of the given filters applied in top down order, matching the key and that is a doc
         // should error on any filters that do not fit the style
         unsigned long long int getDocumentID(const FilterSet & sourceFilters);
 
-
-        // TODO
-        // Needed Additional Functionality
-
-        // Note: Doc's will be stored with its given key in key and a special value in value that is unique
-        // to Doc's - if the key matches, the value will as well. The type will be GPUDB_DOC
-
-        // Make a way to match the key but not the value
-        // Needed For: to do filters by key X when value doesn't matter, and getDocumentsForFilterSet Changes
-        // Also needed for getDocumentID
-        // Suggested Solution: When GPUDB_Type in a filter = GPUDB_ANY, do this
-
-        // Make a comparator for value but not key
-
     private:
+        CPUAggregator cpuAggregator;
         size_t numEntries;
-        DeviceVector_t deviceEntries;
-
-        DeviceVector_t * deviceIntermediateBuffer1;
-        HostVector_t * hostResultBuffer;
         HostVector_t * hostCreateBuffer;
+        HostVector_t * hostResultBuffer;
+        DeviceVector_t deviceEntries;
+        DeviceVector_t * intermediateBuffer;
+        float totalFindIfMs;
+        unsigned int threadCount;
 
         void optimizedSearchEntriesDown(const FilterGroup & filterGroup, const unsigned long int layer);
-
+        void markValidRootsForLayer(const unsigned long long int beginLayer);
         unsigned long int internalGetDocsForFilterSet(const FilterSet &filters);
-        void buildResultsBottomUp(std::vector<Doc> & result, const unsigned long int beginLayer);
+
+        void getDocumentsForParent(Doc * parent);
+        void getDocumentsForRoots(const unsigned long int rootLayer, std::vector<Doc> & result);
 
         std::vector<Doc> getEntriesForRoots(const InternalResult & rootResults);
 

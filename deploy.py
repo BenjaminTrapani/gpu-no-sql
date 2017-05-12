@@ -27,10 +27,10 @@ def runSSHWithCommand(command):
     print('exit_code:' + str(exit_code))
 
 def runMakeCheck():
-    runSSHWithCommand('source ~/.profile && cd ~/gpudb/gpu-no-sql/src && make clean &&  make check')
+    runSSHWithCommand('source ~/.profile && cd ~/gpudb/gpu-no-sql/src && make clean && make check')
 
 def runMakeTopCheck():
-    runSSHWithCommand('source ~/.profile && cd ~/gpudb/gpu-no-sql/src && make clean &&  make topcheck')
+    runSSHWithCommand('source ~/.profile && cd ~/gpudb/gpu-no-sql/src && make clean && make topcheck')
 
 def cleanOldGPUDB():
     print('removing old files in ~/gpudb/gpu-no-sql/')

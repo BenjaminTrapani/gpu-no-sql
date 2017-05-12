@@ -4,14 +4,16 @@
 
 #ifndef GPU_NO_SQL_GPUDBDRIVERTEST_H
 #define GPU_NO_SQL_GPUDBDRIVERTEST_H
-#include "Doc.h"
+#include "Doc.hpp"
 
 class GPUDBDriverTest{
 public:
     void runTests();
 private:
     void runDeepNestingTests();
-    void generateNestedDoc(size_t nestings, GPUDB::Doc * parent, size_t beginIndex);
+    void runTwoKeyTest();
+    void runLargeResultTest();
+    void runBalloonTest();
 };
 
 #endif //GPU_NO_SQL_GPUDBDRIVERTEST_H

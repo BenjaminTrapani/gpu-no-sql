@@ -11,7 +11,9 @@ namespace GPUDB {
         GREATER_EQ,
         EQ,
         LESS_EQ,
-        LESS
+        LESS,
+        KEY_ONLY,
+        VAL_ONLY
     } GPUDB_COMP;
 }
 

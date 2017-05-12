@@ -5,16 +5,17 @@
 #ifndef GPU_NO_SQL_FILTERSET_HPP
 #define GPU_NO_SQL_FILTERSET_HPP
 #include <vector>
-#include "Entry.h"
+#include "Entry.hpp"
+#include "Filter.hpp"
 
 namespace GPUDB {
-    typedef class FilterGroup {
+    class FilterGroup {
     public:
         FilterGroup():resultMember(false){}
 
-        typedef std::vector<Entry>::const_iterator const_iterator;
+        typedef std::vector<Filter>::const_iterator const_iterator;
 
-        std::vector<Entry> group;
+        std::vector<Filter> group;
         bool resultMember;
     };
 
