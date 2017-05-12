@@ -6,8 +6,8 @@ def runSSHWithCommand(command):
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
-        ssh.connect(hostname='rpc.wks.ccs.neu.edu', username='gpu',
-        password='hf11Ben3ftb7whq')
+        ssh.connect(hostname='hostname', username='user',
+        password='password')
     except Exception as e:
         print e;
 
